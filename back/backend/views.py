@@ -6,15 +6,31 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import TemplateView
+from django.conf import settings
+import os
 from .models import Category, Product, Cart, Wishlist
 from .serializers import CategorySerializer,CartSerializer
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.authtoken.models import Token
 
 
 import json
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_csrf_token(request):
+    return Response({"detail": "CSRF cookie set"})
+
+
+class FrontendAppView(TemplateView):
+    template_name = 'index.html'
+
+    def get_template_names(self):
+        # Override to use the React build index.html
+        return [os.path.join(settings.FRONTEND_DIST_DIR, 'index.html')]
 
 @csrf_exempt
 @api_view(["POST"])
@@ -41,25 +57,42 @@ def login_user(request):
 
     user = authenticate(request, username=email, password=password)
     if user is not None:
-        login(request, user)  # sets sessionid cookie
-        user_data = {
-            "id": user.id,
-            "is_superuser": user.is_superuser,
-        }
-        return Response(
-            {
-                "detail": "Login successful",
-                "user": user_data
-            },
-            status=status.HTTP_200_OK,
-        )
+         token, _ = Token.objects.get_or_create(user=user)
+         return Response({
+            "detail": "Login successful",
+            "token": token.key,
+            "user": {
+                "id": user.id,
+                "is_superuser": user.is_superuser,
+            }
+        })
     else:
         return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
+@api_view(["GET"])
+def get_profile(request):
+    user=request.user
+    return response({
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email":user.email,
+    })
+@api_view(["GET"])
+def getOrders(request):
+    total_orders = Cart.objects.count()
 
-@csrf_exempt
+    return Response({"total_orders": total_orders})
+@api_view(['GET'])
+def getUsers(request):
+    total_users = User.objects.count()
+    return Response({
+        "activeusers": total_users
+    })
+
+
+
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def add_category(request):
     name = request.POST.get("name", "")
     if Category.objects.filter(name=name).exists():
@@ -87,7 +120,7 @@ def get_categories(request):
 
 @api_view(["POST"])
 #TODO add permission classes 
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 
 def add_product(request):
     if request.method != "POST":
@@ -147,6 +180,7 @@ def add_product(request):
 
 def get_products(request):
     products = Product.objects.all()
+    
     product_list = []
     for product in products:
         product_data = {
@@ -248,16 +282,17 @@ def edit_product(request, productId):
     return JsonResponse({"message": "Product updated successfully"}, status=200)
 #TODO: add permission classes 
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def add_to_cart(request):
+    
     if request.method != "POST":
         return JsonResponse({"error": "POST request required"}, status=400)
 
-    
+    user = request.user
     data = json.loads(request.body)
     product_id = data.get("product_id")
     quantity = data.get("quantity", 1)
-    user_id =data.get("id",1)
+    user_id = user.id
 
     if not product_id:
         return JsonResponse({"error": "product_id is required"}, status=400)
@@ -322,13 +357,20 @@ def logout_user(request):
     return response
 @api_view(['GET'])
 @authentication_classes([])  # Disable authentication
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 #TODO: implement user based cart viewing 
 def get_cart(request):
+        
+    user = request.user
 
-    carts = Cart.objects.filter(user_id=4)
+    carts = Cart.objects.filter(user=user)  
     serializer = CartSerializer(carts, many=True, context={'request': request})
+
+    print("User:", request.user)
+    print("Is authenticated:", request.user.is_authenticated)
+
     return Response(serializer.data)
+
 
 
 

@@ -15,6 +15,7 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIST_DIR = BASE_DIR.parent / 'yobraf' / 'dist'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 APPEND_SLASH=False 
@@ -32,12 +33,16 @@ ALLOWED_HOSTS = []
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8080",
-    "http://localhost:8080",    
+    "http://localhost:8080",
+    "http://localhost:8000",   
+    "http://127.0..0.18000", 
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8080",
     "http://localhost:8080",
+    "http://localhost:8000",   
+    "http://127.0..0.18000", 
 ]
 
 
@@ -52,18 +57,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'backend',
     
    
 ]
 REST_FRAMEWORK = {
-        'DEFAULT_PERMISSION_CLASSES': (
-            
-            'rest_framework.permissions.IsAuthenticated',
-        ),
+        
         'DEFAULT_AUTHENTICATION_CLASSES': (
-            'rest_framework_simplejwt.authentication.JWTAuthentication',
+            'rest_framework.authentication.TokenAuthentication',
         ),
     }
 
@@ -80,12 +83,12 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'backend.urls'
 
-EXTERNAL_DIST_DIR = os.path.join(BASE_DIR, "../front/dist")
+EXTERNAL_DIST_DIR = os.path.join(BASE_DIR,  '../../../yobraf/dist')
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [ EXTERNAL_DIST_DIR],
+        'DIRS': [ FRONTEND_DIST_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -154,12 +157,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_URL = '/static/assets/'
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles/")
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "../front/dist/assets"),  # JS & CSS from Vite
+    os.path.join(FRONTEND_DIST_DIR,  'assets/'),  # JS & CSS from Vite
 ]
-TEMPLATES[0]['DIRS'] = [ os.path.join(BASE_DIR, "../front/dist"),
+TEMPLATES[0]['DIRS'] = [ 
+    FRONTEND_DIST_DIR,
                         ]
 
 

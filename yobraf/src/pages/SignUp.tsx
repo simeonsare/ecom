@@ -3,22 +3,12 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 
-// 🔹 Utility function to read cookie
-function getCookie(name: string): string | null {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (const cookie of cookies) {
-      const trimmed = cookie.trim();
-      if (trimmed.startsWith(name + "=")) {
-        cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
+
+
+const token = localStorage.getItem("authToken");
+console.log("Auth Token in SignUp:", token);
 
 export const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -33,19 +23,12 @@ export const SignUp = () => {
       console.log("Submitting form data:", formData);
       console.log("Current cookies:", document.cookie);
 
-      // Step 1: Get CSRF cookie from Django
-  
-
-      // Step 2: Read csrftoken from cookies
-      const csrftoken = getCookie("csrftoken");
-      console.log("CSRF Token:", csrftoken);
 
       // Step 3: Send registration request with CSRF token
-      const res = await fetch("http://127.0.0.1:8000/api/register/", {
+      const res = await fetch("/api/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": csrftoken || "",
         },
         body: JSON.stringify(formData),
         credentials: "include", // include cookies in request
@@ -56,6 +39,15 @@ export const SignUp = () => {
       }
 
       const data = await res.json();
+
+      toast.success("Account created successfully! Please log in.", {
+        position: "top-center",
+      });
+
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 2000); // 2-second delay
+
       console.log("Sign up successful:", data);
 
     } catch (error) {

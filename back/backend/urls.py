@@ -19,16 +19,21 @@ from django.urls import path,re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
+from .views import FrontendAppView
+
 from django.views.generic import TemplateView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-
+import os
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    path('api/csrf', views.get_csrf_token, name = "csrftoken"),
     path('api/register/', views.register_user, name='register'),
     path('api/login/', views.login_user , name='login'),    
+    path('api/profile/', views.get_profile ,name='profile'),
     path('api/addCategories/', views.add_category, name='add_category'),
     path('api/getCategories/', views.get_categories, name='get_categories'),
     path('api/addProduct/', views.add_product, name='add_product'),
@@ -40,8 +45,16 @@ urlpatterns = [
     path('api/remove_from_cart/', views.remove_from_cart, name = 'remove_from_cart'),
     path('api/logout/', views.logout_user, name ="logout_user"),
     path('api/wishlist/',views.toggle_wishlist, name = "toggle_wishlist"),
+    path('api/getOrders/', views.getOrders , name ="totalOrders"),
+    path('api/getUsers/', views.getUsers, name="getUsers"),
+    # Catch all for the frontend routes
+    re_path(r'^(?!api/).*$', FrontendAppView.as_view(), name='spa'),
 ]
 
+# Serve static files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
 
+# Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

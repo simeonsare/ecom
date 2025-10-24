@@ -28,6 +28,38 @@ export const AdminDashboard: React.FC = () => {
       .then(data => setproducts(data))
       .catch(() => setproducts([]));
   }, []);
+  const [totalOrders, setTotalOrders] = useState(0);
+   useEffect(() => {
+    fetch("/api/getOrders/", {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Token ${localStorage.getItem("authToken")}`,
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        setTotalOrders(data.total_orders); // or data.length if it's a list
+      })
+      .catch(() => setTotalOrders(0));
+  }, []);
+  const [activeusers, setActiveUsers] = useState(0);
+   useEffect(() => {
+    fetch("/api/getUsers/", {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Token ${localStorage.getItem("authToken")}`,
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        setActiveUsers(data.activeusers); // or data.length if it's a list
+      })
+      .catch(() => setActiveUsers(0));
+  }, []);
   const [mockUserActivities, setMockUserActivities] = useState<UserActivity[]>([]);
   useEffect(() => {
     fetch("/api/getUserActivities/")
@@ -44,25 +76,13 @@ export const AdminDashboard: React.FC = () => {
   const outOfStockProducts = totalProducts - inStockProducts;
   const totalRevenue = products.reduce((sum, p) => sum + (p.price * 10), 0);
   const recentActivities = mockUserActivities.slice(0, 5);
-  const totalOrders = 156; // Mock data
-  const pendingOrders = 23; // Mock data
+  
+  const stats = [ 
+    {
 
-  const stats = [
-    {
-      title: 'Total Revenue',
-      value: `ksh ${totalRevenue.toLocaleString()}`,
-      icon: DollarSign,
-      change: '+23%',
-      changeType: 'positive' as const,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-950'
-    },
-    {
       title: 'Total Orders',
       value: totalOrders,
       icon: ShoppingCart,
-      change: '+12%',
-      changeType: 'positive' as const,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50 dark:bg-blue-950'
     },
@@ -77,10 +97,8 @@ export const AdminDashboard: React.FC = () => {
     },
     {
       title: 'Active Users',
-      value: '1,247',
+      value: activeusers,
       icon: Users,
-      change: '+15%',
-      changeType: 'positive' as const,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50 dark:bg-orange-950'
     }
@@ -134,14 +152,7 @@ export const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent className="relative pt-0">
                 <div className="flex items-center gap-2">
-                  <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ksh {
-                    isPositive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 
-                    'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-                  }`}>
-                    <ChangeIcon className="h-3 w-3" />
-                    {stat.change}
-                  </div>
-                  <span className="text-xs text-muted-foreground">vs last month</span>
+
                 </div>
               </CardContent>
             </Card>
@@ -177,22 +188,7 @@ export const AdminDashboard: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Orders Status</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm">Completed</span>
-              <span className="font-semibold text-emerald-600">{totalOrders - pendingOrders}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm">Pending</span>
-              <span className="font-semibold text-orange-600">{pendingOrders}</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2">
-              <div 
-                className="bg-emerald-500 h-2 rounded-full" 
-                style={{ width: `ksh {((totalOrders - pendingOrders) / totalOrders) * 100}%` }}
-              />
-            </div>
-          </CardContent>
+
         </Card>
 
         <Card>
@@ -232,7 +228,7 @@ export const AdminDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {products.slice(0, 5).map((product) => (
+              {products.map((product) => (
                 <div key={product.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <img 

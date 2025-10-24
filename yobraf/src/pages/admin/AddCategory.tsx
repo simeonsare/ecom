@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
+import { ToastAction } from "@radix-ui/react-toast";
+import { toast } from "sonner";
 function getCookie(name: string) {
   let cookieValue = null;
   if (document.cookie && document.cookie !== "") {
@@ -30,6 +32,8 @@ interface Category {
   image: string;
   productCount: number;
 }
+const token = localStorage.getItem("authToken");
+
 
 export const AddCategory: React.FC = () => {
   const navigate = useNavigate();
@@ -64,6 +68,7 @@ export const AddCategory: React.FC = () => {
     }
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -84,7 +89,9 @@ export const AddCategory: React.FC = () => {
         body: formDataToSend,
         credentials: "include",
         headers: {
-          "X-CSRFToken": csrftoken || "",
+          "Authorization": `Token ${token}`
+                                
+          
         },
 
         // NOTE: Do NOT set Content-Type header with FormData
@@ -92,14 +99,18 @@ export const AddCategory: React.FC = () => {
 
       if (!res.ok) {
         const errorMsg = await res.text();
+        toast.warning(errorMsg)
         console.error("Failed to save category:", errorMsg);
         return;
       }
-
-      console.log("Category added successfully");
+       toast.success("category created successfully! Please add products.", {
+        position: "top-center",
+      });
       navigate("/admin");
     } catch (error) {
-      console.error("Error submitting product:", error);
+      
+      toast.warning(error)
+
     }
   };
 

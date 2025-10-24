@@ -13,6 +13,7 @@ import { Help } from "@/pages/Help";
 import { ProductDetail } from "@/pages/ProductDetail";
 import { SignUp } from "@/pages/SignUp";
 import { Login } from "@/pages/Login";
+import Logout from "@/pages/Logout";
 import { Cart } from "@/pages/Cart";
 import { About } from "@/pages/About";
 import { Contact } from "@/pages/Contact";
@@ -55,6 +56,12 @@ const App = () => (
                 <Home />
               </Layout>
             } />
+             {/* Store Routes */}
+            <Route path="/" element={
+              <Layout>
+                <Home />
+              </Layout>
+            } />
             <Route path="/categories" element={
               <Layout>
                 <Categories />
@@ -77,6 +84,8 @@ const App = () => (
             } />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/logout" element={<Logout />} />
+
             <Route path="/cart" element={
               <Layout>
                 <Cart />

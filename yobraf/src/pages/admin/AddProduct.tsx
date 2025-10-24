@@ -9,22 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Plus, X, Upload, Save, Eye } from 'lucide-react';
 import { Product } from '@/types/product';
+import { toast } from 'sonner';
 
-function getCookie(name: string) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (const cookie of cookies) {
-      const cookieTrimmed = cookie.trim();
-      if (cookieTrimmed.startsWith(name + "=")) {
-        cookieValue = decodeURIComponent(cookieTrimmed.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
-const csrftoken = getCookie("csrftoken");
 
 export const AddProduct: React.FC = () => {
   const navigate = useNavigate();
@@ -121,7 +107,7 @@ export const AddProduct: React.FC = () => {
     }
     return 0;
   };
-
+ 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -149,19 +135,24 @@ export const AddProduct: React.FC = () => {
         body: form,
         credentials: "include",
         headers: {
-          "X-CSRFToken": csrftoken || "",
-        },
+        "Authorization": `Token ${localStorage.getItem("authToken")}`        },
       });
 
       if (!res.ok) {
         const errorMsg = await res.text();
+        toast.warning(errorMsg)
+        
         console.error("Failed to save product:", errorMsg);
         return;
       }
-
+     toast.success("Product created successfully!", {
+        position: "top-center",
+      });
       console.log("Product added successfully");
       navigate("/admin");
     } catch (error) {
+      toast.warning(error)
+      
       console.error("Error submitting product:", error);
     }
   };

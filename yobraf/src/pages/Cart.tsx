@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
+
+
 // Updated interfaces to reflect nested product data
 interface Product {
   id: number;
@@ -17,25 +19,15 @@ interface CartItem {
   product: Product;
   quantity: number;
 }
+//access token 
+const token = localStorage.getItem("authToken") || "";
+console.log("Auth Token:", token);
 
-// Function to get CSRF token from cookie
-function getCookie(name: string) {
-  let cookieValue = "";
-  const cookies = document.cookie ? document.cookie.split("; ") : [];
-  for (let i = 0; i < cookies.length; i++) {
-    const cookie = cookies[i];
-    if (cookie.startsWith(name + "=")) {
-      cookieValue = decodeURIComponent(cookie.split("=")[1]);
-      break;
-    }
-  }
-  return cookieValue;
-}
 
 export const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [couponCode, setCouponCode] = useState("");
-  const csrftoken = getCookie("csrftoken");
+
 
   // Fetch cart data on mount
   useEffect(() => {
@@ -43,10 +35,13 @@ export const Cart = () => {
       method: "GET",
       credentials: "include", // include cookies
       headers: {
-        "X-CSRFToken": csrftoken || "",
+        "Content-Type": "application/json",
+        "Authorization": `Token ${token}`,
+
+        
       },
-    })
-      .then((res) => {
+    }).then((res) => {
+      
         if (!res.ok) throw new Error("Failed to fetch cart");
         return res.json();
       })
@@ -56,7 +51,7 @@ export const Cart = () => {
       .catch((err) => {
         console.error(err);
       });
-  }, [csrftoken]);
+  }, []);
 
   // Update quantity handler
   const updateQuantity = (id: number, newQuantity: number) => {

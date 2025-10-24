@@ -1,20 +1,43 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
+
 export const Account = () => {
   const [profileData, setProfileData] = useState({
-    firstName: "Md",
-    lastName: "Rimel",
-    email: "rimel111@gmail.com",
-    address: "Kingston, 5236, United State",
+    firstName: "",
+    lastName: "",
+    email: "",
+    address: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
   });
+
+  useEffect(() => {
+    const res = fetch("/api/profile/", {
+      method: "GET",
+      credentials: "include", // if using session auth
+      headers: {
+        "Content-Type": "application/json",
+       ' Authorization': `Token ${localStorage.getItem("authToken")}`,
+      }
+    })
+    .then(res => res.json())
+      .then(data => {
+        setProfileData(prev => ({
+          ...prev,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          email: data.email,
+        }));
+      })
+      .catch(err => console.error("Failed to fetch profile:", err));
+  }, []);
+
 
   const handleSave = () => {
     // Handle save profile
@@ -31,7 +54,7 @@ export const Account = () => {
           <span>My Account</span>
         </div>
         <div className="text-sm">
-          Welcome! <span className="text-destructive">Md Rimel</span>
+          Welcome! <span className="text-destructive">{profileData.firstName}</span>
         </div>
       </div>
 

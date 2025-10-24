@@ -2,13 +2,14 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Moon, Sun, ShoppingCart, Search, User, Heart } from 'lucide-react';
+import { Moon, Sun, ShoppingCart, Search, User, Heart, LogIn, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
+const token = localStorage.getItem("authToken") || "";
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
@@ -39,7 +40,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
 
           <div className="flex items-center gap-4">
-            {!isAdmin && (
+            {!isAdmin && token != null &&(
               <>
                 <div className="relative">
                   <Input
@@ -65,9 +66,27 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </Button>
                 
                 <Button variant="ghost" size="icon" asChild>
-                  <Link to="/account">
-                    <User className="h-5 w-5" />
+                  <Link to="/logout">
+                    <LogOut className="h-5 w-5" />
                   </Link>
+                </Button>
+              </>
+            )}
+            {!isAdmin && !token&&(
+              <>  
+                <Button variant="ghost" size="icon" asChild>
+                  <Link to="/login">
+                    <LogIn className="h-5 w-5" />
+                      <div>
+                      <span>Login      </span> </div>
+                  
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="icon" asChild>
+                  <Link to="/sign-up">
+                    <span>                  /            Sign-up</span>  
+                  </Link>
+                  
                 </Button>
               </>
             )}

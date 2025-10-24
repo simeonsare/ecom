@@ -4,25 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import{ toast } from "@/components/ui/use-toast";
+import user from "../data/user";
 
 import { ChevronLeft, ChevronRight, Star, Eye, Heart, ArrowRight } from "lucide-react";
-function getCookie(name: string) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (const cookie of cookies) {
-      const cookieTrimmed = cookie.trim();
-      if (cookieTrimmed.startsWith(name + "=")) {
-        cookieValue = decodeURIComponent(cookieTrimmed.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
-const csrftoken = getCookie("csrftoken");
+import { error } from "console";
 
-
+const token = localStorage.getItem("authToken");
+console.log("Auth Token:", token);
 export const Home = () => {
   const [timeLeft, setTimeLeft] = useState({
     days: 3,
@@ -30,6 +18,18 @@ export const Home = () => {
     minutes: 19,
     seconds: 56
   });
+
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => ({
+        ...prev,
+        seconds: prev.seconds > 0 ? prev.seconds - 1 : 59
+      }));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -186,11 +186,11 @@ function useProducts() {
                       <Button
                         className="w-full bg-black hover:bg-gray-800 text-white"
                       onClick={() => {
-                              fetch(`http://localhost:8000/api/add_to_cart/`, {
+                              fetch("/api/add_to_cart/", {
                                 method: "POST",
                                 headers: {
                                   "Content-Type": "application/json",
-                                  "X-CSRFToken": csrftoken || "",
+                                  "Authorization": `Token ${token}`,
                                 },
                                 credentials: "include", 
                                 body: JSON.stringify({
@@ -200,7 +200,9 @@ function useProducts() {
                               })
                                 .then((res) => {
                                   if (!res.ok) {
-                                    throw new Error("Failed to add to cart");
+                                     return res.json().then(data => {
+                                      throw new Error(data.message || "Check if you are logged in");
+                                    });
                                   }
                                   return res.json();
                                 })
@@ -214,7 +216,7 @@ function useProducts() {
                                   console.error(err);
                                   toast({
                                     title: "Error",
-                                    description: "Could not add product to cart.",
+                                    description: `Could not add product to cart ${err?.message || err}`,
                                     variant: "destructive",
                                   });
                                 });
@@ -334,7 +336,7 @@ ad
                                 method: "POST",
                                 headers: {
                                   "Content-Type": "application/json",
-                                  "X-CSRFToken": csrftoken || "",
+                                  "Authorization": `Token ${token}`,
                                 },
                                 credentials: "include", 
                                 body: JSON.stringify({
@@ -489,6 +491,7 @@ ad
                 <div className="aspect-square bg-gray-100 relative overflow-hidden">
                   {product.image ? (
                     <img
+                                      
                       src={product.image}
                       alt={product.name}
                       className="w-full h-full object-cover"
@@ -508,7 +511,7 @@ ad
                                 method: "POST",
                                 headers: {
                                   "Content-Type": "application/json",
-                                  "X-CSRFToken": csrftoken || "",
+                                  "Authorization": `Token ${token}`,
                                 },
                                 credentials: "include", 
                                 body: JSON.stringify({

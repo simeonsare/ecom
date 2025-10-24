@@ -2,20 +2,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-function getCookie(name: string): string | null {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (const cookie of cookies) {
-      const trimmed = cookie.trim();
-      if (trimmed.startsWith(name + "=")) {
-        cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
 
 export const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -25,11 +11,10 @@ export const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/login/", {
+      const res = await fetch("/api/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken") || "",
         },
         credentials: "include", //  allow cookies
         body: JSON.stringify(formData),
@@ -41,21 +26,28 @@ export const Login = () => {
 
 
       
-// to do implement role based redirection
+// to do implement role based redirection     
       const data = await res.json();
+      localStorage.setItem("authToken", data.token);
+      console.log( localStorage.getItem("authToken"));
+
        // Save user data in context or global store here
-      if (data.user.is_superuser=== false)
-      navigate("/dashboard");
-      else
-      navigate("/admin");
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unexpected error occurred");
+      if (data.user.is_superuser=== false){
+        navigate("/dashboard");
+        window.location.reload();
       }
-    }
-  };
+      else{
+
+        navigate("/admin");
+      }}
+       catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unexpected error occurred");
+        }
+      }
+    };
 
   return (
     <div className="min-h-screen bg-white flex">
