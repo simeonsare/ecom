@@ -7,70 +7,131 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { Product } from '@/types/product';
+
+const token = localStorage.getItem("authToken");
 
 export const EditProduct: React.FC = () => {
   const navigate = useNavigate();
   const { productId } = useParams();
   const { toast } = useToast();
-  
 
-  const [products, setproducts] = useState<Product[]>([]);
-  useEffect(() => { 
-    fetch("/api/getProducts/")
-      .then(res => res.json())
-      .then(data => setproducts(data))
-      .catch(() => setproducts([]));
-  }, []);
-  const product = products.find(p => String(p.id) === String(productId));
+  const [formData, setFormData] = useState<Product | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
 
-
-  const [formData, setFormData] = useState({
-    name: product?.name || '',
-    brand: product?.brand || '',
-    price: product?.price || 0,
-    originalPrice: product?.originalPrice || 0,
-    discount: product?.discount || 0,
-    category: product?.category || '',
-    description: product?.description || '',
-    image: product?.image || '',
-    inStock: product?.inStock ?? true,
-    stockQuantity: product?.stockQuantity || 0,
-    isTodaysDeals: product?.isTodaysDeals ?? false
-  });
-
+  // ✅ Fetch product
   useEffect(() => {
-    if (!product) {
-      toast({
-        title: "Product not founcccd",
-        description: "The product you're trying to edit doesn't exist.",
-        variant: "destructive"
-      });
-      navigate('/admin/products');
-    }
-  }, [product, navigate, toast]);
+    if (!productId) return;
 
-  const handleSubmit = (e: React.FormEvent) => {
+    fetch(`/api/getProduct/${productId}/`, {
+      headers: { "Authorization": `Token ${token}` }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch product");
+        return res.json();
+      })
+      .then(data => {
+        setFormData(data);
+        setImagePreview(data.image || "");
+      })
+      .catch(() => {
+        toast({
+          title: "Error loading product",
+          description: "Could not fetch product details.",
+          variant: "destructive",
+        });
+      })
+      .finally(() => setLoading(false));
+  }, [productId, toast]);
+
+  // ✅ Fetch categories
+  useEffect(() => {
+    fetch("/api/getCategories/", {
+      headers: { "Authorization": `Token ${token}` }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch categories");
+        return res.json();
+      })
+      .then(data => {
+        setCategories(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        toast({
+          title: "Error loading categories",
+          description: "Unable to load category list.",
+          variant: "destructive",
+        });
+      });
+  }, [toast]);
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+      if (formData) setFormData({ ...formData, image: "" });
+    } else {
+      setImagePreview("");
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.brand || formData.price <= 0) {
+
+    if (!formData?.name || !formData?.brand || formData?.price <= 0) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields correctly.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Product updated",
-      description: `${formData.name} has been updated successfully.`,
-    });
-    navigate('/admin/products');
+    const formDataToSend = new FormData();
+    formDataToSend.append("name", formData.name);
+    formDataToSend.append("brand", formData.brand);
+    formDataToSend.append("price", formData.price.toString());
+    formDataToSend.append("originalPrice", (formData.originalPrice || 0).toString());
+    formDataToSend.append("discount", (formData.discount || 0).toString());
+    formDataToSend.append("category", formData.category);
+    formDataToSend.append("description", formData.description || "");
+    formDataToSend.append("inStock", String(formData.inStock));
+    formDataToSend.append("stockQuantity", (formData.stockQuantity || 0).toString());
+    formDataToSend.append("isTodaysDeals", String(formData.isTodaysDeals));
+    if (imageFile) formDataToSend.append("image", imageFile);
+
+    try {
+      const res = await fetch(`/api/updateProduct/${productId}/`, {
+        method: "POST",
+        body: formDataToSend,
+        headers: { "Authorization": `Token ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Update failed");
+
+      toast({
+        title: "Product Updated",
+        description: `${formData.name} updated successfully.`,
+      });
+      navigate("/admin/products");
+    } catch (error) {
+      toast({
+        title: "Error updating product",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    }
   };
 
-  if (!product) return null;
+  if (loading) return <p>Loading product details...</p>;
+  if (!formData) return <p>Product not found.</p>;
 
   return (
     <div className="space-y-6">
@@ -128,7 +189,7 @@ export const EditProduct: React.FC = () => {
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.originalPrice}
+                  value={formData.originalPrice || 0}
                   onChange={(e) => setFormData({ ...formData, originalPrice: parseFloat(e.target.value) })}
                 />
               </div>
@@ -140,11 +201,12 @@ export const EditProduct: React.FC = () => {
                   type="number"
                   min="0"
                   max="100"
-                  value={formData.discount}
+                  value={formData.discount || 0}
                   onChange={(e) => setFormData({ ...formData, discount: parseInt(e.target.value) })}
                 />
               </div>
 
+              {/* ✅ Dynamically fetched categories */}
               <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
                 <select
@@ -155,11 +217,15 @@ export const EditProduct: React.FC = () => {
                   required
                 >
                   <option value="">Select Category</option>
-                  <option value="Electronics">Electronics</option>
-                  <option value="Gaming">Gaming</option>
-                  <option value="Fashion">Fashion</option>
-                  <option value="Home">Home</option>
-                  <option value="Sports">Sports</option>
+                  {categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <option key={cat.id} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No categories found</option>
+                  )}
                 </select>
               </div>
 
@@ -169,19 +235,30 @@ export const EditProduct: React.FC = () => {
                   id="stockQuantity"
                   type="number"
                   min="0"
-                  value={formData.stockQuantity}
+                  value={formData.stockQuantity || 0}
                   onChange={(e) => setFormData({ ...formData, stockQuantity: parseInt(e.target.value) })}
                 />
               </div>
 
+              {/* ✅ Image File Upload like Category */}
               <div className="space-y-2">
-                <Label htmlFor="image">Image URL</Label>
+                <Label htmlFor="imageFile">Select Image File</Label>
                 <Input
-                  id="image"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
+                  id="imageFile"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageFileChange}
                 />
+                {imagePreview && (
+                  <div className="border rounded-lg overflow-hidden mt-2">
+                    <img
+                      src={imagePreview}
+                      alt="Product preview"
+                      className="w-full h-48 object-cover"
+                      onError={() => setImagePreview("")}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -224,7 +301,8 @@ export const EditProduct: React.FC = () => {
               <Button type="button" variant="outline" onClick={() => navigate('/admin/products')}>
                 Cancel
               </Button>
-              <Button type="submit" className="gradient-primary">
+              <Button type="submit" size="lg" className="gradient-primary">
+                <Save className="h-4 w-4 mr-2" />
                 Update Product
               </Button>
             </div>

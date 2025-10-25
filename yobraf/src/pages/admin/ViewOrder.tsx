@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Package, User, Mail, MapPin, Calendar, Truck, CheckCircle, Clock, XCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  Package,
+  User,
+  Mail,
+  MapPin,
+  Calendar,
+  Truck,
+  CheckCircle,
+  Clock,
+  XCircle,
+} from 'lucide-react';
 
 interface OrderItem {
   id: string;
@@ -31,50 +42,37 @@ interface OrderDetails {
   trackingNumber?: string;
 }
 
-const mockOrderDetails: OrderDetails = {
-  id: '1',
-  orderNumber: 'ORD-001',
-  customerName: 'John Doe',
-  customerEmail: 'john@example.com',
-  customerPhone: '+1 (555) 123-4567',
-  shippingAddress: '123 Main St, New York, NY 10001, USA',
-  date: '2024-01-15',
-  status: 'delivered',
-  subtotal: 279.97,
-  shipping: 15.00,
-  tax: 5.02,
-  total: 299.99,
-  paymentMethod: 'Credit Card ****1234',
-  trackingNumber: 'TRK123456789',
-  items: [
-    {
-      id: '1',
-      name: 'Wireless Headphones',
-      quantity: 1,
-      price: 99.99,
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e'
-    },
-    {
-      id: '2',
-      name: 'Smart Watch',
-      quantity: 1,
-      price: 149.99,
-      image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30'
-    },
-    {
-      id: '3',
-      name: 'Phone Case',
-      quantity: 1,
-      price: 29.99,
-      image: 'https://images.unsplash.com/photo-1556656793-08538906a9f8'
-    }
-  ]
-};
+
 
 export const ViewOrder: React.FC = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
-  const [order] = useState<OrderDetails>(mockOrderDetails);
+  const [order, setOrder] = useState<OrderDetails | null>(null);
+  const token = localStorage.getItem('authToken');
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        const res = await fetch(`/api/getOrder/${orderId}/`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            "Authorization": `Token ${token}`,
+          },
+        });
+
+        if (!res.ok) throw new Error('Failed to fetch order');
+
+        const data = await res.json();
+        setOrder(data); // assumes your backend returns an OrderDetails-like object
+      } catch (error) {
+        console.error('Error fetching order:', error);
+        navigate('/admin/orders'); // redirect back to orders list on error
+      }
+    };
+
+    fetchOrder();
+  }, [orderId, token]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -110,6 +108,8 @@ export const ViewOrder: React.FC = () => {
     }
   };
 
+  if (!order) return <p className="text-center">Loading order...</p>;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -140,7 +140,9 @@ export const ViewOrder: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Order Date</p>
-                  <p className="font-semibold">{new Date(order.date).toLocaleDateString()}</p>
+                  <p className="font-semibold">
+                    {new Date(order.date).toLocaleDateString()}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Payment Method</p>
@@ -171,9 +173,11 @@ export const ViewOrder: React.FC = () => {
                     />
                     <div className="flex-1">
                       <p className="font-semibold">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Quantity: {item.quantity}
+                      </p>
                     </div>
-                    <p className="font-semibold">${item.price.toFixed(2)}</p>
+                    <p className="font-semibold">ksh{item.price.toFixed(2)}</p>
                   </div>
                 ))}
               </div>
@@ -181,19 +185,19 @@ export const ViewOrder: React.FC = () => {
               <div className="mt-6 space-y-2 border-t pt-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${order.subtotal.toFixed(2)}</span>
+                  <span>ksh{order.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span>${order.shipping.toFixed(2)}</span>
+                  <span>ksh{order.shipping.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax</span>
-                  <span>${order.tax.toFixed(2)}</span>
+                  <span>ksh{order.tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
                   <span>Total</span>
-                  <span>${order.total.toFixed(2)}</span>
+                  <span>ksh{order.total.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>
@@ -243,16 +247,22 @@ export const ViewOrder: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          {/*<Card>
             <CardHeader>
               <CardTitle>Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full" variant="outline">Update Status</Button>
-              <Button className="w-full" variant="outline">Print Invoice</Button>
-              <Button className="w-full" variant="outline">Contact Customer</Button>
+              <Button className="w-full" variant="outline">
+                Update Status
+              </Button>
+              <Button className="w-full" variant="outline">
+                Print Invoice
+              </Button>
+              <Button className="w-full" variant="outline">
+                Contact Customer
+              </Button>
             </CardContent>
-          </Card>
+          </Card>*/}
         </div>
       </div>
     </div>

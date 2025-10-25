@@ -27,34 +27,48 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 import os
+from django.views.static import serve
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    path('api/csrf', views.get_csrf_token, name = "csrftoken"),
     path('api/register/', views.register_user, name='register'),
     path('api/login/', views.login_user , name='login'),    
     path('api/profile/', views.get_profile ,name='profile'),
     path('api/addCategories/', views.add_category, name='add_category'),
     path('api/getCategories/', views.get_categories, name='get_categories'),
     path('api/addProduct/', views.add_product, name='add_product'),
+    path('api/delete/<int:productId>/', views.delete_product, name='delete_product'),
     path('api/getProducts/', views.get_products, name='get_products'),
+    path('api/getProduct/<int:productId>/', views.get_product, name='get_product'),
     path("api/products/<int:productId>/toggle-deal/", views.toggle_deal, name="toggle-deal"),
     path("api/products/edit/<int:productId>/", views.edit_product, name = "edit_product"),
+    path('api/updateProduct/<int:productId>/', views.update_product, name='update_product'),
     path('api/add_to_cart/', views.add_to_cart, name = 'add_to_cart'),
     path('api/get_cart/', views.get_cart , name="get_cart"),
     path('api/remove_from_cart/', views.remove_from_cart, name = 'remove_from_cart'),
     path('api/logout/', views.logout_user, name ="logout_user"),
     path('api/wishlist/',views.toggle_wishlist, name = "toggle_wishlist"),
+    path('api/create_order/', views.create_order, name ="create_order"),
     path('api/getOrders/', views.getOrders , name ="totalOrders"),
+    path('api/getOrder/<int:orderId>/', views.getOrder, name="getOrder"),
+    path('api/orders/<int:orderId>/update_status/', views.update_order_status, name="update_order_status"),
+    path('api/addUser/', views.addUser, name="addUser"),
     path('api/getUsers/', views.getUsers, name="getUsers"),
+    path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
+
+
+
+
     # Catch all for the frontend routes
     re_path(r'^(?!api/).*$', FrontendAppView.as_view(), name='spa'),
 ]
 
-# Serve static files during development
-if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
 
 # Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve static files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])

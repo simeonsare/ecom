@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
-
+const token = localStorage.getItem('authToken');
 export const AddUser: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -15,6 +15,7 @@ export const AddUser: React.FC = () => {
     email: '',
     phone: '',
     location: '',
+    password: '',
     role: 'customer' as 'admin' | 'customer',
     status: 'active' as 'active' | 'inactive'
   });
@@ -42,12 +43,34 @@ export const AddUser: React.FC = () => {
       });
       return;
     }
-
-    toast({
-      title: "User added successfully",
-      description: `${formData.name} has been added to the system.`,
+  fetch('/api/addUser/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Token ${token}`,
+      },
+      body: JSON.stringify(formData)
+    })
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error('Failed to add user');
+      }
+      return res.json();
+    })
+    .then(() => {
+      toast({
+        title: "User added successfully",
+        description: `${formData.name} has been added to the system.`,
+      });
+      navigate('/admin/users');
+    })
+    .catch((err) => {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive"
+      });
     });
-    navigate('/admin/users');
   };
 
   return (
@@ -99,6 +122,17 @@ export const AddUser: React.FC = () => {
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="********"
+                />
+              </div>
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
@@ -135,17 +169,15 @@ export const AddUser: React.FC = () => {
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
-            </div>
-
-            <div className="flex gap-4 justify-end">
-              <Button type="button" variant="outline" onClick={() => navigate('/admin/users')}>
-                Cancel
-              </Button>
-              <Button type="submit" className="gradient-primary">
-                Add User
-              </Button>
-            </div>
-          </form>
+                <div className="flex gap-4 justify-end">
+                  <Button type="button" variant="outline" onClick={() => navigate('/admin/users')}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="gradient-primary">
+                    Add User
+                  </Button>
+                </div>
+            </form>
         </CardContent>
       </Card>
     </div>

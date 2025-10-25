@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -21,17 +22,20 @@ export const Login = () => {
       });
 
       if (!res.ok) {
+
+        toast.error("Invalid credentials");
         throw new Error("Invalid credentials");
       }
 
 
       
-// to do implement role based redirection     
+// implement role based redirection     
+  // Save user data in context or global store here     
       const data = await res.json();
       localStorage.setItem("authToken", data.token);
-      console.log( localStorage.getItem("authToken"));
+      localStorage.setItem("isAdmin", JSON.stringify(data.user.is_superuser));
 
-       // Save user data in context or global store here
+      
       if (data.user.is_superuser=== false){
         navigate("/dashboard");
         window.location.reload();
@@ -105,10 +109,18 @@ export const Login = () => {
               <Button type="submit" className="bg-destructive hover:bg-destructive/90 px-8">
                 Log In
               </Button>
-              <Link to="/forgot-password" className="text-destructive hover:underline text-sm">
-                Forget Password?
-              </Link>
+              <div>
+                <Link to="/forgot-password" className="text-destructive hover:underline text-sm">
+                Forget Password? 
+              </Link> 
+              
+              <Link to="/sign-up" className="text-destructive hover:underline text-sm">
+                 <br /> No account? Sign Up
+              </Link>  
+              </div>
+                         
             </div>
+            
           </form>
         </div>
       </div>

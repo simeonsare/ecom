@@ -39,6 +39,15 @@ import { AddUser } from "@/pages/admin/AddUser";
 import { EditProduct } from "@/pages/admin/EditProduct";
 import { ViewOrder } from "@/pages/admin/ViewOrder";
 import NotFound from "./pages/NotFound";
+import { Navigate } from "react-router-dom";
+
+const AdminRoute = ({ children }: { children: JSX.Element }) => {
+  const isAdmin = JSON.parse(localStorage.getItem("isAdmin") || "false");
+
+  return isAdmin ? children : <Navigate to="/dashboard" replace />;
+};
+
+
 
 const queryClient = new QueryClient();
 
@@ -149,89 +158,123 @@ const App = () => (
             
             {/* Admin Routes */}
             <Route path="/admin" element={
-              <Layout>
-                <AdminLayout>
-                  <AdminDashboard />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <AdminDashboard />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
+
             <Route path="/admin/category/new" element={
-              <Layout>
-                <AdminLayout>
-                  <AddCategory />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <AddCategory />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
+
             <Route path="/admin/products" element={
-              <Layout>
-                <AdminLayout>
-                  <ProductManagement />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <ProductManagement />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
+
             <Route path="/admin/products/new" element={
-              <Layout>
-                <AdminLayout>
-                  <AddProduct />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <AddProduct />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
 
             <Route path="/admin/products/edit/:productId" element={
-              <Layout>
-                <AdminLayout>
-                  <EditProduct />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <EditProduct />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
+
             <Route path="/admin/users/new" element={
-              <Layout>
-                <AdminLayout>
-                  <AddUser />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <AddUser />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
+
             <Route path="/admin/orders/:orderId" element={
-              <Layout>
-                <AdminLayout>
-                  <ViewOrder />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <ViewOrder />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
+
             <Route path="/admin/activities" element={
-              <Layout>
-                <AdminLayout>
-                  <UserActivityPage />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <UserActivityPage />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
+
             <Route path="/admin/orders" element={
-              <Layout>
-                <AdminLayout>
-                  <Orders />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <Orders />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
+
             <Route path="/admin/users" element={
-              <Layout>
-                <AdminLayout>
-                  <Users />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <Users />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
+
             <Route path="/admin/analytics" element={
-              <Layout>
-                <AdminLayout>
-                  <Analytics />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <Analytics />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
+
             <Route path="/admin/settings" element={
-              <Layout>
-                <AdminLayout>
-                  <Settings />
-                </AdminLayout>
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <Settings />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
             } />
             
             {/* Catch-all route */}

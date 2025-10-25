@@ -1,19 +1,38 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Moon, Sun, ShoppingCart, Search, User, Heart, LogIn, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { SignUp } from '@/pages/SignUp';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const token = localStorage.getItem("authToken") || "";
+
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
+
+  const [cartCount, setCartCount] = useState<number>(0);
+    useEffect(() => {
+      fetch("/api/get_cart/", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Token ${token}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setCartCount(data.count || 0);
+        })
+        .catch(console.error);
+    }, [token]);
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -40,56 +59,63 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
 
           <div className="flex items-center gap-4">
-            {!isAdmin && token != null &&(
-              <>
-                <div className="relative">
-                  <Input
-                    placeholder="What are you looking for?"
-                    className="w-60 pr-10"
-                  />
-                  <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                </div>
-                
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to="/wishlist">
-                    <Heart className="h-5 w-5" />
-                  </Link>
-                </Button>
-                
-                <Button variant="ghost" size="icon" className="relative" asChild>
-                  <Link to="/cart">
-                    <ShoppingCart className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-1 bg-destructive text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      3
-                    </span>
-                  </Link>
-                </Button>
-                
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to="/logout">
-                    <LogOut className="h-5 w-5" />
-                  </Link>
-                </Button>
-              </>
-            )}
-            {!isAdmin && !token&&(
-              <>  
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to="/login">
-                    <LogIn className="h-5 w-5" />
-                      <div>
-                      <span>Login      </span> </div>
-                  
-                  </Link>
-                </Button>
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to="/sign-up">
-                    <span>                  /            Sign-up</span>  
-                  </Link>
-                  
-                </Button>
-              </>
-            )}
+                {!isAdmin && !!token ? (
+                  <>
+                    {/* Search Input */}
+                    <div className="relative">
+                      <Input
+                        placeholder="What are you looking for?"
+                        className="w-60 pr-10"
+                      />
+                      <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    </div>
+
+                    {/* Wishlist Button */}
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link to="/wishlist">
+                        <Heart className="h-5 w-5" />
+                      </Link>
+                    </Button>
+
+                    {/* Cart Button with Badge */}
+                    <Button variant="ghost" size="icon" className="relative" asChild>
+                      <Link to="/cart">
+                        <ShoppingCart className="h-5 w-5" />
+                        <span className="absolute -top-1 -right-1 bg-destructive text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {cartCount}
+                        </span>
+                      </Link>
+                    </Button>
+
+                    {/* Logout Button */}
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link to="/logout">
+                        <LogOut className="h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </>
+                ) : (
+                  !isAdmin && (
+                    <>
+                      {/* Login Button */}
+                      <Button variant="ghost" size="icon" asChild>
+                        <Link to="/login" className="flex items-center gap-2">
+                          <LogIn className="h-5 w-5" />
+                          <span>Login |</span>
+                        </Link>
+                      </Button>
+
+                      {/* Sign-up Button */}
+                      <Button variant="ghost" size="icon" asChild>
+                        <Link to="/sign-up">
+                          <span>| Sign-up</span>
+                        </Link>
+                      </Button>
+                    </>
+                  )
+                )}
+              </div>
+
             
             <Button
               variant="ghost"
@@ -102,7 +128,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Sun className="h-4 w-4" />
               )}
             </Button>
-          </div>
         </div>
       </header>
 

@@ -3,14 +3,13 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
-
-
-// Updated interfaces to reflect nested product data
 interface Product {
   id: number;
   name: string;
-  price: string;  // From API, price is a string
+  price: string;
   image: string;
 }
 
@@ -19,38 +18,32 @@ interface CartItem {
   product: Product;
   quantity: number;
 }
-//access token 
-const token = localStorage.getItem("authToken") || "";
-console.log("Auth Token:", token);
 
+const token = localStorage.getItem("authToken") || "";
 
 export const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [couponCode, setCouponCode] = useState("");
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [userDetails, setUserDetails] = useState({
+    name: "",
+    phone: "",
+    address: "",
+  });
 
-
-  // Fetch cart data on mount
   useEffect(() => {
     fetch("/api/get_cart/", {
       method: "GET",
-      credentials: "include", // include cookies
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Token ${token}`,
-
-        
       },
-    }).then((res) => {
+    })
+      .then((res) => res.json())
+      .then((data: CartItem[]) => setCartItems(data.data))
       
-        if (!res.ok) throw new Error("Failed to fetch cart");
-        return res.json();
-      })
-      .then((data: CartItem[]) => {
-        setCartItems(data);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    
+      .catch(console.error);
   }, []);
 
   // Update quantity handler
@@ -68,16 +61,41 @@ export const Cart = () => {
     setCartItems((items) => items.filter((item) => item.id !== id));
   };
 
-  // Calculate totals (convert price string to float for calculation)
+
   const subtotal = cartItems.reduce(
     (sum, item) => sum + parseFloat(item.product.price) * item.quantity,
     0
   );
-  const shipping = 0; // Free shipping
-  const total = subtotal + shipping;
+  const total = subtotal;
+
+  const handleOrderSubmit = async () => {
+    const payload = {
+      items: cartItems,
+      total: total.toFixed(2),
+      ...userDetails,
+    };
+
+    const res = await fetch("/api/create_order/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Token ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      alert("✅ Order placed successfully! You will be contacted shortly via WhatsApp.");
+      setShowCheckout(false);
+      
+    } else {
+      alert("❌ Failed to create order. Please try again.");
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
         <Link to="/" className="hover:text-foreground">
@@ -195,13 +213,61 @@ export const Cart = () => {
                 <span>Total:</span>
                 <span>ksh {total.toFixed(2)}</span>
               </div>
-
-              <Button className="w-full bg-destructive hover:bg-destructive/90 mt-6">
-                Proceed to checkout
-              </Button>
             </div>
           </div>
+          <Button
+            className="w-full bg-destructive hover:bg-destructive/90 mt-6"
+            onClick={() => setShowCheckout(true)}
+          >
+            Proceed to checkout
+          </Button>
+
+          {/* Checkout Modal */}
+          <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirm Your Order</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div>
+                  <Label>Name</Label>
+                  <Input
+                    value={userDetails.name}
+                    onChange={(e) => setUserDetails({ ...userDetails, name: e.target.value })}
+                    placeholder="Enter your name"
+                  />
+                </div>
+                <div>
+                  <Label>Phone (for WhatsApp)</Label>
+                  <Input
+                    value={userDetails.phone}
+                    onChange={(e) => setUserDetails({ ...userDetails, phone: e.target.value })}
+                    placeholder="e.g. +2547XXXXXXXX"
+                  />
+                </div>
+                <div>
+                  <Label>Delivery Address</Label>
+                  <Input
+                    value={userDetails.address}
+                    onChange={(e) => setUserDetails({ ...userDetails, address: e.target.value })}
+                    placeholder="Enter your address"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowCheckout(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleOrderSubmit} className="bg-destructive hover:bg-destructive/90">
+                  Confirm Order
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
+      </div>
       </div>
     </div>
   );

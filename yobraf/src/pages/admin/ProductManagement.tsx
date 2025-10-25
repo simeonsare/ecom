@@ -16,21 +16,6 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Product } from '@/types/product';
 
-function getCookie(name: string) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (const cookie of cookies) {
-      const cookieTrimmed = cookie.trim();
-      if (cookieTrimmed.startsWith(name + "=")) {
-        cookieValue = decodeURIComponent(cookieTrimmed.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
-const csrftoken = getCookie("csrftoken");
 
 export const ProductManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -56,13 +41,31 @@ export const ProductManagement: React.FC = () => {
   const categories = Array.from(new Set(products.map(p => p.category)));
 
   const handleDeleteProduct = (productId: string) => {
-    setProducts(products.filter(p => p.id !== productId));
-    toast({
-      title: "Product deleted",
-      description: "The product has been removed successfully.",
+    setProducts(products.filter(p => p.id !== Number(productId)));
+    fetch(`/api/delete/${productId}/`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+         "Authorization": `Token ${localStorage.getItem("authToken") || ""}`,  },
+    })
+    .then(res => {
+      if (res.ok) {
+        toast({
+          title: "Product deleted",
+          description: "The product has been removed successfully.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Could not delete the product.",
+          variant: "destructive",
+        });
+      }   
     });
   };
-
+const edit = (productId: number) => {
+    navigate(`/admin/products/edit/${productId}`);
+  };  
   const handleToggleTodaysDeals = async (productId: string) => {
   const product = products.find(p => String(p.id) === productId);
   if (!product) return;
@@ -71,10 +74,10 @@ export const ProductManagement: React.FC = () => {
 
   try {
     const res = await fetch(`/api/products/${productId}/toggle-deal/`, {
-      method: "PATCH",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRFToken": csrftoken || "",
+          "Authorization": `Token ${localStorage.getItem("authToken") || ""}`,
         },
       body: JSON.stringify({ isTodaysDeals: newValue }),
     });
@@ -204,6 +207,7 @@ export const ProductManagement: React.FC = () => {
                       variant={product.isTodaysDeals ? "default" : "outline"} 
                       size="sm"
                       onClick={() => handleToggleTodaysDeals(String(product.id))}
+                      
                       title={product.isTodaysDeals ? "Remove from Today's Deals" : "Add to Today's Deals"}
                     >
                       <Zap className="h-4 w-4" />
@@ -211,7 +215,7 @@ export const ProductManagement: React.FC = () => {
                     <Button 
                       variant="ghost" 
                       size="sm"
-                      onClick={() => navigate(`/admin/products/edit/${String(product.id)}`)}
+                      onClick={() => edit(product.id)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>

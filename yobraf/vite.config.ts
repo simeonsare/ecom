@@ -10,6 +10,10 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     proxy: {
+      '/media':{
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
       "/api": "http://localhost:8000",
     },
   },

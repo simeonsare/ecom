@@ -12,19 +12,25 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from corsheaders.defaults import default_headers
+import pymysql
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIST_DIR = BASE_DIR.parent / 'yobraf' / 'dist'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-APPEND_SLASH=False 
+APPEND_SLASH=True 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-2m%l+wey#g1e&uc_%%^x81lk$t=()o0q-2s%&gd(7^c2rl6kj*'
+#whatsapp 
+ADMIN_WHATSAPP = "+254716735799"
+CALLMEBOT_API_KEY = "3645711"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -35,17 +41,20 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8080",
     "http://localhost:8080",
     "http://localhost:8000",   
-    "http://127.0..0.18000", 
+    "http://127.0.0.18000", 
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8080",
     "http://localhost:8080",
     "http://localhost:8000",   
-    "http://127.0..0.18000", 
+    "http://127.0.0.1:8000",
 ]
 
 
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'content-disposition',
+]
 
 # Application definition
 
@@ -106,18 +115,24 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-DATABASES = {
+"""DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'yobra',       
         'USER': 'root',       
-        'PASSWORD': '',  
+        'PASSWORD': 'root',  
         'HOST': 'localhost',         
-        'PORT': '3306',              
+        'PORT': '3307',              
         'OPTIONS': {
             'charset': 'utf8mb4',     
         },
+    }
+}"""
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

@@ -10,7 +10,6 @@ import { ChevronLeft, ChevronRight, Star, Eye, Heart, ArrowRight } from "lucide-
 import { error } from "console";
 
 const token = localStorage.getItem("authToken");
-console.log("Auth Token:", token);
 export const Home = () => {
   const [timeLeft, setTimeLeft] = useState({
     days: 3,

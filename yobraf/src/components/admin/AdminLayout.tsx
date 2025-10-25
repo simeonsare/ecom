@@ -33,26 +33,26 @@ const adminNavItems = [
     href: '/admin/orders',
     icon: ShoppingCart
   },
-  {
-    title: 'Users',
-    href: '/admin/users',
-    icon: Users
-  },
-  {
-    title: 'User Activity',
-    href: '/admin/activities',
-    icon: Activity
-  },
-  {
-    title: 'Analytics',
-    href: '/admin/analytics',
-    icon: BarChart3
-  },
-  {
-    title: 'Settings',
-    href: '/admin/settings',
-    icon: Settings
-  }
+{
+  title: 'Users',
+  href: '/admin/users',
+  icon: Users
+},
+/*{
+  title: 'User Activity',
+  href: '/admin/activities',
+  icon: Activity
+},
+{
+  title: 'Analytics',
+  href: '/admin/analytics',
+  icon: BarChart3
+},*/
+{
+  title: 'Settings',
+  href: '/admin/settings',
+  icon: Settings
+}
 ];
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
