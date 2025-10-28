@@ -14,16 +14,19 @@ import {
   RotateCcw,
   MessageCircle
 } from 'lucide-react';
-import { mockProducts } from '@/data/mockData';
+import { useProducts } from '@/hooks/products';
 import { redirectToWhatsApp } from '@/utils/whatsapp';
+import { handleAddToCart } from '@/utils/cart';
 
 export const ProductDetail: React.FC = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const token = localStorage.getItem('authToken');
 
-  const product = mockProducts.find(p => p.id === productId);
+  const products = useProducts();
+  const product = products.find(p => Number(p.id) === Number(productId));
 
   if (!product) {
     return (
@@ -45,12 +48,10 @@ export const ProductDetail: React.FC = () => {
     : 0;
 
   // Mock additional images
-  const productImages = [
-    product.image,
-    product.image.replace('w=400', 'w=500'),
-    product.image.replace('w=400', 'w=600'),
-    product.image.replace('w=400', 'w=700')
-  ];
+const productImages = product
+  ? [product.image, ...(product.images || [])]
+  : [];
+
 
   return (
     <div className="min-h-screen">
@@ -126,10 +127,10 @@ export const ProductDetail: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-4 mb-6">
-                <span className="text-4xl font-bold text-primary">${product.price}</span>
+                <span className="text-4xl font-bold text-primary">ksh {product.price}</span>
                 {product.originalPrice && (
                   <span className="text-2xl text-muted-foreground line-through">
-                    ${product.originalPrice}
+                    ksh{product.originalPrice}
                   </span>
                 )}
               </div>
@@ -163,7 +164,7 @@ export const ProductDetail: React.FC = () => {
                   </Button>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  Total: ${(product.price * quantity).toFixed(2)}
+                  Total: ksh {(product.price * quantity).toFixed(2)}
                 </span>
               </div>
 
@@ -177,10 +178,28 @@ export const ProductDetail: React.FC = () => {
                   <MessageCircle className="h-5 w-5 mr-2" />
                   Order via WhatsApp
                 </Button>
-                <Button variant="outline" size="lg" disabled={!product.inStock}>
+               <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => {
+                    if (!token) {
+                      alert("Please log in to add items to your cart.");
+                      return;
+                    }
+
+                    if (!product.inStock) {
+                      alert("Sorry, this product is out of stock.");
+                      return;
+                    }
+
+                    // ✅ Proceed to add to cart (API call or state update)
+                    handleAddToCart(product.id, product.name);
+                  }}
+                >
                   <ShoppingBag className="h-5 w-5 mr-2" />
                   Add to Cart
                 </Button>
+
               </div>
 
               {/* Service Features */}
@@ -282,7 +301,7 @@ export const ProductDetail: React.FC = () => {
                   <div>
                     <h4 className="font-semibold">Delivery Options</h4>
                     <p className="text-muted-foreground">Free standard delivery (3-5 business days)</p>
-                    <p className="text-muted-foreground">Express delivery available ($9.99)</p>
+                    <p className="text-muted-foreground">Express delivery available (ksh 500)</p>
                   </div>
                   <div>
                     <h4 className="font-semibold">Return Policy</h4>
@@ -296,9 +315,8 @@ export const ProductDetail: React.FC = () => {
 
         {/* Related Products */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">Related Products</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {mockProducts
+            {products
               .filter(p => p.category === product.category && p.id !== product.id)
               .slice(0, 4)
               .map(relatedProduct => (
@@ -312,8 +330,10 @@ export const ProductDetail: React.FC = () => {
                     />
                     <h3 className="font-semibold text-sm mb-2 line-clamp-2">{relatedProduct.name}</h3>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-primary">${relatedProduct.price}</span>
-                      <Button size="sm" variant="outline">View</Button>
+                      <span className="font-bold text-primary">ksh {relatedProduct.price}</span>
+                      <Button size="sm" variant="outline"
+                        onClick={() => navigate(`/product/${relatedProduct.id}`)}
+                      >View</Button>
                     </div>
                   </CardContent>
                 </Card>

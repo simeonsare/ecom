@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Ship } from "lucide-react";
 
 interface Product {
   id: number;
@@ -68,30 +69,36 @@ export const Cart = () => {
   );
   const total = subtotal;
 
-  const handleOrderSubmit = async () => {
-    const payload = {
-      items: cartItems,
-      total: total.toFixed(2),
-      ...userDetails,
-    };
-
-    const res = await fetch("/api/create_order/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Token ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
-      alert("✅ Order placed successfully! You will be contacted shortly via WhatsApp.");
-      setShowCheckout(false);
-      
-    } else {
-      alert("❌ Failed to create order. Please try again.");
-    }
+const handleOrderSubmit = async () => {
+  // Ensure cartItems is an array of item objects
+  const payload = {
+    items: cartItems.map(item => ({
+      product_id: item.product.id, // use the runtime product id from the cart item
+      quantity: item.quantity,
+      // add other relevant item details if needed
+    })),
+    total: total.toFixed(2),
+    subtotal: subtotal.toFixed(2),
+    ...userDetails,
   };
+
+  const res = await fetch("/api/create_order/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Token ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.ok) {
+    alert("✅ Order placed successfully! You will be contacted shortly via WhatsApp.");
+    setShowCheckout(false);
+  } else {
+    alert("❌ Failed to create order. Please try again.");
+  }
+};
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -204,7 +211,7 @@ export const Cart = () => {
 
               <div className="flex justify-between pb-2">
                 <span>Shipping:</span>
-                <span>Free</span>
+                <span>Free within nairobi</span>
               </div>
 
               <Separator />

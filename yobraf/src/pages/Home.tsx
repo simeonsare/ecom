@@ -5,9 +5,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import{ toast } from "@/components/ui/use-toast";
 import user from "../data/user";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
+import { handleAddToCart } from '@/utils/cart';
 
-import { ChevronLeft, ChevronRight, Star, Eye, Heart, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, Eye, Heart, ArrowRight, Flame } from "lucide-react";
 import { error } from "console";
+import { Handle } from "vaul";
 
 const token = localStorage.getItem("authToken");
 export const Home = () => {
@@ -86,7 +92,7 @@ export const Home = () => {
 };
 
 
-function useProducts() {
+function useProducts(): Product[] {
   const [exploreProducts, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -99,38 +105,84 @@ function useProducts() {
 }
 
   const exploreProducts = useProducts();
+  const featuredProducts = exploreProducts.filter(p => p.isFeatured);
   const flashSaleProducts = exploreProducts.filter(p => p.isFlashSale).slice(0, 8);  
   const bestSellingProducts = exploreProducts.filter(p => p.isBestSeller).slice(0, 8);
   return (
-    <div className="min-h-screen">
-      {/*TODO: create slider for products 
-       Hero Section */}
+        <div className="min-h-screen">
+      {/* 🔥 Hero Section with Swiper */}
       <div className="bg-black text-white py-16">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Side Text */}
             <div>
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                  <span className="text-black text-xl">🍎</span>
+                  <Flame className="h-8 w-8 text-black" />
                 </div>
-                <span>iPhone 14 Series</span>
+                <span>Hot Deals</span>
               </div>
               <h1 className="text-5xl font-semibold mb-6 leading-tight">
-                Up to 10%<br />off Voucher
+                Limited time offers you can't miss!<br />
               </h1>
-              <Link to="/products" className="inline-flex items-center gap-2 text-white underline hover:no-underline">
+              <Link
+                to="/products"
+                className="inline-flex items-center gap-2 text-white underline hover:no-underline"
+              >
                 Shop Now <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
+
+            {/* ✅ Fixed Product Swiper */}
             <div className="relative">
-              <div className="aspect-square bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex items-center justify-center text-8xl">
-                📱💜
-              </div>
+              <Swiper
+                modules={[Autoplay, Pagination]}
+                spaceBetween={20}
+                slidesPerView={1}
+                loop
+                autoplay={{ delay: 3000, disableOnInteraction: false }}
+                pagination={{ clickable: true }}
+                className="rounded-lg overflow-hidden shadow-lg"
+              >
+                {featuredProducts.length > 0 ? (
+                  featuredProducts.map((product) => (
+                    <SwiperSlide key={product.id}>
+                      <div className="relative">
+                        <Link to={`/product/${product.id}`}>
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-[350px] object-cover rounded-lg"
+                          />
+                        </Link>
+                        <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-6 text-white">
+                          <h2 className="text-xl font-semibold mb-1">{product.name}</h2>
+                          <p className="text-sm mb-2">{product.category}</p>
+                          <div className="flex justify-between items-center">
+                            <span className="text-lg font-bold">Ksh {product.price}</span>
+                            <Link
+                              to={`/product/${product.id}`}
+                              className="bg-white text-black px-4 py-1 rounded-md text-sm hover:bg-gray-200"
+                            >
+                              View
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </SwiperSlide>
+                  ))
+                ) : (
+                  <SwiperSlide>
+                    <div className="h-[350px] flex items-center justify-center text-gray-400 bg-gray-900">
+                      No featured products found.
+                    </div>
+                  </SwiperSlide>
+                )}
+              </Swiper>
             </div>
           </div>
         </div>
       </div>
-
       {/* Flash Sales */}
       <section className="py-16">
         <div className="container mx-auto px-4">
@@ -178,48 +230,20 @@ function useProducts() {
                   </div>
                   
                   <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                    <a href={`product/${product.id}`} key={product.id}>
+
                     <div className="w-full h-full flex items-center justify-center text-4xl">
-                      🎮
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        className="w-full h-48 object-cover transition-slow group-hover:scale-105"
+                      />
                     </div>
+                    </a>
                     <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-3 transform translate-y-full group-hover:translate-y-0 transition-transform">
                       <Button
                         className="w-full bg-black hover:bg-gray-800 text-white"
-                      onClick={() => {
-                              fetch("/api/add_to_cart/", {
-                                method: "POST",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                  "Authorization": `Token ${token}`,
-                                },
-                                credentials: "include", 
-                                body: JSON.stringify({
-                                  product_id: product.id, // make sure your backend expects this key
-                                  quantity: 1,
-                                }),
-                              })
-                                .then((res) => {
-                                  if (!res.ok) {
-                                     return res.json().then(data => {
-                                      throw new Error(data.message || "Check if you are logged in");
-                                    });
-                                  }
-                                  return res.json();
-                                })
-                                .then((data) => {
-                                  toast({
-                                    title: "Added to Cart",
-                                    description: `${product.name} has been added to your cart.`,
-                                  });
-                                })
-                                .catch((err) => {
-                                  console.error(err);
-                                  toast({
-                                    title: "Error",
-                                    description: `Could not add product to cart ${err?.message || err}`,
-                                    variant: "destructive",
-                                  });
-                                });
-                            }}
+                        onClick={() => handleAddToCart(product.id, product.name)}
 >
                         Add To Cart
                       </Button>
@@ -245,7 +269,6 @@ function useProducts() {
               </Card>
             ))}
           </div>
-ad
           <div className="text-center">
             <Button className="bg-destructive hover:bg-destructive/90"
             onClick={() => window.location.href = '/products'}>
@@ -324,47 +347,21 @@ ad
                   </div>
                   
                   <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                    <a href={`product/${product.id}`} key={product.id}>
+
                     <div className="w-full h-full flex items-center justify-center text-4xl">
-                      👕
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        className="w-full h-48 object-cover transition-slow group-hover:scale-105"
+                      />
                     </div>
+                    </a>
                     <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-3 transform translate-y-full group-hover:translate-y-0 transition-transform">
-                      <Button
+                      <Button disabled={!product.inStock || !token}
                         className="w-full bg-black hover:bg-gray-800 text-white"
-                      onClick={() => {
-                              fetch(`http://localhost:8000/api/add_to_cart/`, {
-                                method: "POST",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                  "Authorization": `Token ${token}`,
-                                },
-                                credentials: "include", 
-                                body: JSON.stringify({
-                                  product_id: product.id, // make sure your backend expects this key
-                                  quantity: 1,
-                                }),
-                              })
-                                .then((res) => {
-                                  if (!res.ok) {
-                                    throw new Error("Failed to add to cart");
-                                  }
-                                  return res.json();
-                                })
-                                .then((data) => {
-                                  toast({
-                                    title: "Added to Cart",
-                                    description: `${product.name} has been added to your cart.`,
-                                  });
-                                })
-                                .catch((err) => {
-                                  console.error(err);
-                                  toast({
-                                    title: "Error",
-                                    description: "Could not add product to cart.",
-                                    variant: "destructive",
-                                  });
-                                });
-                            }}
->
+                        onClick={() => handleAddToCart(product.id, product.name)}
+                      >
                         Add To Cart
                       </Button>
                     </div>
@@ -465,9 +462,11 @@ ad
             </div>
           </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" >
           {exploreProducts.map((product) => (
-            <Card key={product.id} className="group relative overflow-hidden">
+            <Card key={product.id} className="group relative overflow-hidden"
+           
+            >
               <CardContent className="p-0">
                 {/* New Arrival Badge */}
                 {product.isNewArrival && (
@@ -487,63 +486,36 @@ ad
                 </div>
 
                 {/* Product Image */}
-                <div className="aspect-square bg-gray-100 relative overflow-hidden">
-                  {product.image ? (
-                    <img
-                                      
-                      src={product.image}
+              <a href={`product/${product.id}`} key={product.id}>
+              <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                {product.image ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl">
+                    <img 
+                      src={product.image} 
                       alt={product.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-48 object-cover transition-slow group-hover:scale-105"
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl">
-                      🎁
-                    </div>
-                  )}
+                  </div>
+                )}
+              </div>
+              </a>
+                
 
                   {/* Hover: Add to Cart */}
                   <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-3 transform translate-y-full group-hover:translate-y-0 transition-transform">
                     <Button
                         className="w-full bg-black hover:bg-gray-800 text-white"
-                      onClick={() => {
-                              fetch(`http://localhost:8000/api/add_to_cart/`, {
-                                method: "POST",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                  "Authorization": `Token ${token}`,
-                                },
-                                credentials: "include", 
-                                body: JSON.stringify({
-                                  product_id: product.id, // make sure your backend expects this key
-                                  quantity: 1,
-                                }),
-                              })
-                                .then((res) => {
-                                  if (!res.ok) {
-                                    throw new Error("Failed to add to cart");
-                                  }
-                                  return res.json();
-                                })
-                                .then((data) => {
-                                  toast({
-                                    title: "Added to Cart",
-                                    description: `${product.name} has been added to your cart.`,
-                                  });
-                                })
-                                .catch((err) => {
-                                  console.error(err);
-                                  toast({
-                                    title: "Error",
-                                    description: "Could not add product to cart.",
-                                    variant: "destructive",
-                                  });
-                                });
-                            }}
->
+                        onClick={() => handleAddToCart(product.id, product.name)}
+                    >
                       Add To Cart
                     </Button>
                   </div>
-                </div>
 
                 {/* Product Info */}
                 <div className="p-4">
@@ -592,6 +564,7 @@ ad
                 </div>
               </CardContent>
             </Card>
+         
           ))}
         </div>
 

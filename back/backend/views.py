@@ -15,7 +15,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.conf import settings
 import os
-from .models import Category, Product, Cart, Wishlist, Order, OrderItem
+import json
+from .models import Category, Product, Cart, Wishlist, Order, OrderItem,ProductImage
 import requests
 
 from .serializers import CategorySerializer,CartSerializer
@@ -86,82 +87,71 @@ def generate_order_number():
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_order(request):
-        try:
-            data = request.data
-            items = data.get("items", [])
-            phone = data.get("phone")
-            shipping_address = data.get("address")
-            subtotal = float(data.get("total", 0))
-            shipping = float(data.get("shipping", 0))
-            tax = float(data.get("tax", 0))
-            total = subtotal + shipping + tax
-            payment_method = data.get("payment_method", "Cash on Delivery")
+    user = request.user
+    if not user.is_authenticated:
+        return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)  
+    data = request.data
+    items = data.get('items', [])
+    if not items:
+        return JsonResponse({'error': 'No items provided'}, status=400)
 
-            # Get user info
-            user = request.user
-            customer_name = user.get_full_name() or user.username
-            customer_email = user.email
+    # Create the main order object
+    order = Order.objects.create(
+        order_number=generate_order_number(),
+        customer_name=user.first_name + " " + user.last_name,
+        customer_email=user.email,
+        customer_phone=data.get('phone'),
+        shipping_address=data.get('address'),
+        subtotal=data.get('subtotal'),
+        shipping=data.get('shipping', 0.00),
+        total=data.get('total'),
+        payment_method=data.get('payment_method', 'Cash on Delivery'),
+    )
 
-            # Create order
-            order = Order.objects.create(
-                order_number=generate_order_number(),
-                customer_name=customer_name,
-                customer_email=customer_email,
-                customer_phone=phone,
-                shipping_address=shipping_address,
-                subtotal=subtotal,
-                shipping=shipping,
-                tax=tax,
-                total=total,
-                payment_method=payment_method,
+    # Create order items for each item in payload
+    for item in items:
+        product = Product.objects.get(id=item['product_id'])
+        OrderItem.objects.create(
+            order=order,
+            product_id=item['product_id'],
+            product_name=product.name,
+            quantity=item['quantity'],
+            price=product.price,
             )
 
-            # Add order items
-            for item in items:
-                OrderItem.objects.create(
-                    order=order,
-                    product_name=item["product"]["name"],
-                    quantity=item["quantity"],
-                    price=item["product"]["price"],
-                    product_id=item["product"]["id"],
-                )
-           
+    # Notify admin via WhatsApp
+    whatsapp_number = getattr(settings, "ADMIN_WHATSAPP", None)
+    api_key = getattr(settings, "CALLMEBOT_API_KEY", None)
+    # Build order items string with name and quantity
+    items_str = "\n".join([f"{item.product_name} x {item.quantity}" for item in order.items.all()])
+    if whatsapp_number and api_key:
 
-            # Notify admin via WhatsApp
-            whatsapp_number = getattr(settings, "ADMIN_WHATSAPP", None)
-            api_key = getattr(settings, "CALLMEBOT_API_KEY", None)
+        message = (
+            f"🛍️ New Order!\n"
+            f"Order No: {order.order_number}\n"
+            f"Customer: {order.customer_name}\n"
+            f"Phone: {order.customer_phone}\n"
+            f"Address: {order.shipping_address}\n"
+            f"Total: Ksh {order.total}\n"
+            f"Items:\n{items_str}"
+        )
+       
+        try:
 
-            if whatsapp_number and api_key:
-                message = (
-                    f"🛍️ New Order!\n"
-                    f"Order No: {order.order_number}\n"
-                    f"Customer: {customer_name}\n"
-                    f"Phone: {phone}\n"
-                    f"Address:{shipping_address}\n"
-                               
-                
-                    f"Total: Ksh {total:.2f}"
-                )
-                try:
+            cart = Cart.objects.filter(user=request.user)
+            cart.delete()
 
-                    cart = Cart.objects.get(user=request.user)
-                    cart.delete()
-
-                except Cart.DoesNotExist:
-                    pass
-                try:
-                    requests.get(
-                        f"https://api.callmebot.com/whatsapp.php?phone={whatsapp_number}"
-                        f"&text={message}&apikey={api_key}"
-                    )
-                except Exception as e:
-                    print("⚠️ WhatsApp notification failed:", e)
-
-            return Response({"message": "Order created successfully"}, status=status.HTTP_201_CREATED)
-
+        except Cart.DoesNotExist:
+            pass
+        try:
+            requests.get(
+                f"https://api.callmebot.com/whatsapp.php?phone={whatsapp_number}"
+                f"&text={message}&apikey={api_key}"
+            )
         except Exception as e:
-            print("❌ Error creating order:", e)
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            print("⚠️ WhatsApp notification failed:", e)
+
+    return Response({"message": "Order created successfully"}, status=status.HTTP_201_CREATED)
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -353,6 +343,17 @@ def add_product(request):
     if Product.objects.filter(name=name).exists():
         return JsonResponse({"message": "Product already exists"}, status=400)
 
+
+    try:
+        features = json.loads(request.POST.get("features", "[]"))
+    except json.JSONDecodeError:
+        features = []
+
+    try:
+        tags = json.loads(request.POST.get("tags", "[]"))
+    except json.JSONDecodeError:
+        tags = []
+
     # Create the product
     product = Product.objects.create(
         name=name,
@@ -365,22 +366,33 @@ def add_product(request):
         brand=request.POST.get("brand", ""),
         rating=request.POST.get("rating", 0),
         reviews=request.POST.get("reviews", 0),
+        features=features,
+        tags=tags,
         in_stock = request.POST.get("inStock", "false").lower() in ["true", "1"],
         is_todays_deals = request.POST.get("isTodaysDeals", "false").lower() in ["true", "1"],
-
+        is_best_seller = "bestseller" in tags,
+        is_featured = "featured" in tags,
+        is_new_arrival = "new" in tags,
+        is_top_rated = "top rated" in tags,
+        is_trending = "trending" in tags,
+        is_flash_sale = "flashsale" in tags,
+        is_popular = "popular" in tags,
+        is_premium = "premium" in tags,
+        is_limited_edition = "limited edition" in tags,
+        is_professional = "professional" in tags,
+        is_creative = "creative" in tags,
+        
         stock_quantity=request.POST.get("stockQuantity", 0),
     )
 
-    #  Handle list fields (features & tags)
-    features = request.POST.getlist("features[]")
-    tags = request.POST.getlist("tags[]")
-
-    if features:
-        product.features = features  # assuming JSONField or ManyToMany
-    if tags:
-        product.tags = tags
 
     product.save()
+
+    for image in request.FILES.getlist("images"):
+        ProductImage.objects.create(
+            product=product,
+            image=image
+        )
 
     return JsonResponse({"message": "Product added successfully"}, status=200)
 
@@ -395,7 +407,12 @@ def get_products(request):
             "price": str(product.price),
             "originalPrice": str(product.original_price) if product.original_price else None,
             "discount": product.discount,
-            "image": request.build_absolute_uri(product.image.url) if product.image else None,  
+            "image": request.build_absolute_uri(product.image.url) if product.image else None,
+            
+            "images": [
+                request.build_absolute_uri(img.image.url)
+                for img in product.images.all()
+            ] if product.images.exists() else [],
             "category": product.category.name if product.category else None,
             "brand": product.brand,
             "rating": product.rating,
@@ -527,25 +544,70 @@ def delete_product(request, productId):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def getOrders(request):
-    user=request.user
+    user = request.user
+
+    # 🧍 Regular user — show only their own orders
     if not user.is_superuser:
-        return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
-    orders = Order.objects.all()    
+        orders = Order.objects.filter(customer_email=user.email).prefetch_related("items")
+
+        data = []
+        for order in orders:
+            items = []
+            for item in order.items.all():
+                # Try to fetch product image safely
+                product_image = None
+                product_name = item.product_name
+                try:
+                    product = Product.objects.get(id=item.product_id)
+                    if product.image:
+                        product_image = request.build_absolute_uri(product.image.url)
+                        product_name = product.name  # prefer latest product name
+                except Product.DoesNotExist:
+                    pass
+
+                items.append({
+                    "id": item.id,
+                    "product": {
+                        "id": item.product_id,
+                        "name": product_name,
+                        "price": str(item.price),
+                        "image": product_image,
+                    },
+                    "quantity": item.quantity,
+                    "price": str(item.price),
+                })
+
+            data.append({
+                "id": order.id,
+                "order_number": order.order_number,
+                "total": str(order.total),
+                "created_at": order.created_at,
+                "status": getattr(order, "status", "Pending"),
+                "items": items,
+            })
+
+        return Response(data)
+
+    # 🧑‍💼 Superuser — show all orders summary
+    orders = Order.objects.prefetch_related("items").all()
     order_list = []
     for order in orders:
         order_data = {
-           "id": order.id,
+            "id": order.id,
             "orderNumber": order.order_number,
             "customerName": order.customer_name,
             "customerEmail": order.customer_email,
-            "date": order.date.isoformat(),
-            "status": order.status,
+            "date": order.created_at.isoformat(),
+            "status": getattr(order, "status", "Pending"),
             "total": float(order.total),
             "items": order.items.count(),
         }
         order_list.append(order_data)
-    return Response({"total_orders": len(order_list), "orders": order_list})
 
+    return Response({
+        "total_orders": len(order_list),
+        "orders": order_list
+    })
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def toggle_deal(request, productId):
@@ -600,6 +662,12 @@ def edit_product(request, productId):
     
     if "image" in request.FILES:
         product.image = request.FILES.get("image")
+
+    for image in request.FILES.getlist("images"):
+        ProductImage.objects.create(
+            product=product,
+            image=image
+        )
         
     product.category = category
     product.brand = request.POST.get("brand", "")

@@ -100,29 +100,30 @@ export const Products: React.FC = () => {
         </div>
       </div>
 
-      {/* Hero Section */}
-      <section className="gradient-primary text-white py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Our Products
-          </h1>
-          <p className="text-xl text-white/90 mb-8">
-            Discover our complete collection of amazing products
-          </p>
-          
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto relative">
-            <Input
-              type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-12 text-foreground bg-background/95 backdrop-blur-sm border-white/20"
-            />
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          </div>
-        </div>
-      </section>
+   {/* Hero Section */}
+<section className="bg-gradient-to-r from-primary to-secondary text-foreground dark:text-white py-12 transition-colors">
+  <div className="container mx-auto px-4 text-center">
+    <h1 className="text-4xl md:text-5xl font-bold mb-4">
+      Our Products
+    </h1>
+    <p className="text-xl text-muted-foreground mb-8">
+      Discover our complete collection of amazing products
+    </p>
+
+    {/* Search Bar */}
+    <div className="max-w-2xl mx-auto relative">
+      <Input
+        type="text"
+        placeholder="Search products..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="pl-12 h-12 text-foreground bg-background/95 backdrop-blur-sm border border-border focus:border-primary transition-colors"
+      />
+      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+    </div>
+  </div>
+</section>
+
 
       <div className="container mx-auto px-4 py-8">
         {/* Filters and Controls */}

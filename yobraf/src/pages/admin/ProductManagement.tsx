@@ -119,6 +119,10 @@ const edit = (productId: number) => {
           <Plus className="h-4 w-4 mr-2" />
           Add Product
         </Button>
+        <Button className="gradient-primary" onClick={() => navigate('/admin/products/flashsale')}>
+          <Plus className="h-4 w-4 mr-2" />
+          Flash sale
+        </Button>
       </div>
 
       {/* Filters */}

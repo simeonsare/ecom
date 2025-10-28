@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Moon, Sun, ShoppingCart, Search, User, Heart, LogIn, LogOut } from 'lucide-react';
+import { Moon, Sun, ShoppingCart, Search, User, Heart, LogIn, LogOut, ShoppingBasket } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { SignUp } from '@/pages/SignUp';
 
@@ -72,8 +72,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                     {/* Wishlist Button */}
                     <Button variant="ghost" size="icon" asChild>
-                      <Link to="/wishlist">
-                        <Heart className="h-5 w-5" />
+                      <Link to="/myorders">
+                        <ShoppingBasket className="h-5 w-5" />
                       </Link>
                     </Button>
 

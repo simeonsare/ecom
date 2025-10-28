@@ -1,4 +1,5 @@
 export interface Product {
+    createdAt: string | number | Date;
   
     colors: string[];
     id: number;

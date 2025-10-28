@@ -32,25 +32,44 @@ interface Order {
 // ✅ Fetch orders from backend
 function useOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("/api/getOrders/", {
-      method: "GET",
-      headers: { "Content-Type": "application/json",
+    const token = localStorage.getItem("authToken");
 
+    if (!token) {
+      toast.error("You are not logged in.");
+      navigate("/login");
+      return;
+    }
+
+    fetch("http://localhost:8080/api/getOrders/", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
         "Authorization": `Token ${token}`,
-       },
-      
+      },
     })
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (res.status === 401) {
+          toast.error("Session expired. Please log in again.");
+          navigate("/login");
+          throw new Error("Unauthorized");
+        }
+        return res.json();
+      })
       .then((data) => {
-        setOrders(data.orders)})
-     
-      .catch(() => setOrders([]));
-  }, []);
+        setOrders(Array.isArray(data.orders) ? data.orders : []);
+      })
+      .catch((err) => {
+        console.error("Error fetching orders:", err);
+        setOrders([]); // ensure safe default
+      });
+  }, [navigate]);
 
   return { orders, setOrders };
 }
+
 
 export const Orders: React.FC = () => {
   const navigate = useNavigate();

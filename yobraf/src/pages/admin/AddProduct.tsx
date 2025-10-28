@@ -11,7 +11,6 @@ import { Plus, X, Upload, Save, Eye } from 'lucide-react';
 import { Product } from '@/types/product';
 import { toast } from 'sonner';
 
-
 export const AddProduct: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<Partial<Product>>({
@@ -31,7 +30,9 @@ export const AddProduct: React.FC = () => {
   const [newFeature, setNewFeature] = useState('');
   const [newTag, setNewTag] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   type Category = {
     id: number;
@@ -39,6 +40,7 @@ export const AddProduct: React.FC = () => {
     image: string;
     active?: boolean;
   };
+
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
@@ -56,7 +58,11 @@ export const AddProduct: React.FC = () => {
     'premium',
     'gaming',
     'professional',
-    'creative'
+    'creative',
+    'limited edition',
+    'trending',
+    'flashsale',
+    'top rated',
   ];
 
   const handleInputChange = (field: keyof Product, value: unknown) => {
@@ -88,16 +94,29 @@ export const AddProduct: React.FC = () => {
     const updatedTags = formData.tags?.filter((_, i) => i !== index) || [];
     handleInputChange('tags', updatedTags);
   };
+  // handle main image upload
+  const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file); // preview only
+  }
+};
 
+  //  handle multiple image files
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file); // preview only
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const selectedFiles = Array.from(files);
+      setImageFiles(selectedFiles);
+
+      // preview
+      const previews = selectedFiles.map(file => URL.createObjectURL(file));
+      setImagePreviews(previews);
     }
   };
 
@@ -107,7 +126,7 @@ export const AddProduct: React.FC = () => {
     }
     return 0;
   };
- 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -124,10 +143,15 @@ export const AddProduct: React.FC = () => {
     form.append("isTodaysDeals", String(formData.isTodaysDeals || false));
     form.append("features", JSON.stringify(formData.features || []));
     form.append("tags", JSON.stringify(formData.tags || []));
-
+    // ✅ append main image
     if (imageFile) {
-      form.append("image", imageFile); // binary upload
+      form.append("image", imageFile); // backend should expect "image" field
     }
+
+    // ✅ append multiple images
+    imageFiles.forEach((file) => {
+      form.append("images", file); // backend should expect "images" array
+    });
 
     try {
       const res = await fetch("/api/addProduct/", {
@@ -135,24 +159,23 @@ export const AddProduct: React.FC = () => {
         body: form,
         credentials: "include",
         headers: {
-        "Authorization": `Token ${localStorage.getItem("authToken")}`        },
+          "Authorization": `Token ${localStorage.getItem("authToken")}`,
+        },
       });
 
       if (!res.ok) {
         const errorMsg = await res.text();
-        toast.warning(errorMsg)
-        
+        toast.warning(errorMsg);
         console.error("Failed to save product:", errorMsg);
         return;
       }
-     toast.success("Product created successfully!", {
+
+      toast.success("Product created successfully!", {
         position: "top-center",
       });
-      console.log("Product added successfully");
-      navigate("/admin");
+      // navigate("/admin");
     } catch (error) {
-      toast.warning(error)
-      
+      toast.warning(String(error));
       console.error("Error submitting product:", error);
     }
   };
@@ -275,7 +298,7 @@ export const AddProduct: React.FC = () => {
                     {calculateDiscount()}% OFF
                   </Badge>
                   <span className="text-sm text-muted-foreground">
-                    Savings: ${((formData.originalPrice || 0) - (formData.price || 0)).toFixed(2)}
+                    Savings: ksh{((formData.originalPrice || 0) - (formData.price || 0)).toFixed(2)}
                   </span>
                 </div>
               )}
@@ -355,33 +378,44 @@ export const AddProduct: React.FC = () => {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Product Image</CardTitle>
+              <CardTitle>Product Images</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="imageFile">Select Image File</Label>
+                <Label htmlFor="imageFiles">Main image</Label>
                 <Input
                   id="imageFile"
                   type="file"
                   accept="image/*"
+                  onChange={handleMainImageChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="imageFiles">Select Images</Label>
+                <Input
+                  id="imageFiles"
+                  type="file"
+                  accept="image/*"
+                  multiple
                   onChange={handleImageChange}
                 />
               </div>
 
-              {imagePreview && (
-                <div className="border rounded-lg overflow-hidden">
-                  <img
-                    src={imagePreview}
-                    alt="Product preview"
-                    className="w-full h-48 object-cover"
-                    onError={() => setImagePreview("")}
-                  />
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {imagePreviews.map((src, index) => (
+                    <div key={index} className="border rounded-lg overflow-hidden">
+                      <img
+                        src={src}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-32 object-cover"
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
           </Card>
-
-  
 
           <Card>
             <CardHeader>

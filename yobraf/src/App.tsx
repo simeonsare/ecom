@@ -32,6 +32,7 @@ import { UserActivityPage } from "@/pages/admin/UserActivity";
 import { AddProduct } from "@/pages/admin/AddProduct";
 import { AddCategory } from "@/pages/admin/AddCategory";
 import { Orders } from "@/pages/admin/Orders";
+import { Orderss } from "@/pages/Orderss";
 import { Users } from "@/pages/admin/Users";
 import { Analytics } from "@/pages/admin/Analytics";
 import { Settings } from "@/pages/admin/Settings";
@@ -98,6 +99,11 @@ const App = () => (
             <Route path="/cart" element={
               <Layout>
                 <Cart />
+              </Layout>
+            } />
+             <Route path="/myorders" element={
+              <Layout>
+                <Orderss/>
               </Layout>
             } />
             <Route path="/about" element={

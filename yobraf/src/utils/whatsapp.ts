@@ -1,5 +1,5 @@
-export const redirectToWhatsApp = (productName: string, productPrice: number, phoneNumber: string = "+1234567890") => {
-  const message = `I need this ${productName} - $${productPrice}`;
+export const redirectToWhatsApp = (productName: string, productPrice: number, phoneNumber: string = "+254795930734") => {
+  const message = `I need this ${productName} - ksh ${productPrice}`;
   const encodedMessage = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${phoneNumber.replace(/[^\d]/g, '')}?text=${encodedMessage}`;
   

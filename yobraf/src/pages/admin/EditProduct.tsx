@@ -19,6 +19,8 @@ export const EditProduct: React.FC = () => {
 
   const [formData, setFormData] = useState<Product | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imagePreview, setImagePreview] = useState("");
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
@@ -81,6 +83,17 @@ export const EditProduct: React.FC = () => {
       setImagePreview("");
     }
   };
+  const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        const selectedFiles = Array.from(files);
+        setImageFiles(selectedFiles);
+  
+        // preview
+        const previews = selectedFiles.map(file => URL.createObjectURL(file));
+        setImagePreviews(previews);
+      }
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +119,10 @@ export const EditProduct: React.FC = () => {
     formDataToSend.append("stockQuantity", (formData.stockQuantity || 0).toString());
     formDataToSend.append("isTodaysDeals", String(formData.isTodaysDeals));
     if (imageFile) formDataToSend.append("image", imageFile);
+    imageFiles.forEach((file) => {
+      formDataToSend.append("images", file); // backend should expect "images" array
+    });
+
 
     try {
       const res = await fetch(`/api/updateProduct/${productId}/`, {
@@ -115,9 +132,9 @@ export const EditProduct: React.FC = () => {
       });
 
       if (!res.ok) throw new Error("Update failed");
-
       toast({
         title: "Product Updated",
+       
         description: `${formData.name} updated successfully.`,
       });
       navigate("/admin/products");
@@ -250,13 +267,38 @@ export const EditProduct: React.FC = () => {
                   onChange={handleImageFileChange}
                 />
                 {imagePreview && (
-                  <div className="border rounded-lg overflow-hidden mt-2">
-                    <img
-                      src={imagePreview}
-                      alt="Product preview"
-                      className="w-full h-48 object-cover"
-                      onError={() => setImagePreview("")}
-                    />
+                  <div>
+                    <div className="border rounded-lg overflow-hidden mt-2">
+                      <img
+                        src={imagePreview}
+                        alt="Product preview"
+                        className="w-full h-48 object-cover"
+                        onError={() => setImagePreview("")}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="imageFiles">Select Images</Label>
+                      <Input
+                        id="imageFiles"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImagesChange}
+                      />
+                    </div>
+                  </div>
+                )}
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {imagePreviews.map((src, index) => (
+                      <div key={index} className="border rounded-lg overflow-hidden">
+                        <img
+                          src={src}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-32 object-cover"
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
