@@ -12,7 +12,8 @@ import {
   MapPin,
   Calendar,
   MoreHorizontal,
-  Shield
+  Shield,
+  Edit
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -109,9 +110,15 @@ export const Users: React.FC = () => {
           <h1 className="text-3xl font-bold">Users</h1>
           <p className="text-muted-foreground mt-2">Manage system users and customers</p>
         </div>
+         <Button className="flex items-center gap-2" onClick={() => navigate('/admin/users/new')}
+          
+          
+          >
+          <Edit className="h-4 w-4" />
+          Update User
+        </Button>
         <Button className="flex items-center gap-2" onClick={() => navigate('/admin/users/new')}
-          
-          
+                
           >
           <UserPlus className="h-4 w-4" />
           Add User
@@ -192,7 +199,7 @@ export const Users: React.FC = () => {
                   <Badge className={getStatusColor(user.status)}>
                     {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
                   </Badge>
-                  <Button variant="outline" size="sm"><MoreHorizontal className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/admin/users/edit/${user.id}`)}><MoreHorizontal className="h-4 w-4" /></Button>
                 </div>
               </div>
             ))}

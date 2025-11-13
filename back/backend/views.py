@@ -16,7 +16,7 @@ from django.views.generic import TemplateView
 from django.conf import settings
 import os
 import json
-from .models import Category, Product, Cart, Wishlist, Order, OrderItem,ProductImage
+from .models import Category, Product, Cart, Wishlist, Order, OrderItem,ProductImage, Store
 import requests
 
 from .serializers import CategorySerializer,CartSerializer
@@ -74,7 +74,7 @@ def login_user(request):
 @permission_classes([IsAuthenticated])
 def get_profile(request):
     user=request.user
-    return response({
+    return Response({
         "first_name": user.first_name,
         "last_name": user.last_name,
         "email":user.email,
@@ -83,6 +83,20 @@ def get_profile(request):
 
 def generate_order_number():
         return "ORD-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getUser(request,userid):
+    user=User.objects.get(id=userid)
+    return Response({
+        "name": user.first_name,
+        "last_name": user.last_name,
+        "email":user.email,
+        "is_superuser":user.is_superuser
+    })
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -215,28 +229,56 @@ def update_order_status(request, orderId):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])  
 def addUser(request):
-    user = request.user
+    user = request.user 
+    data = request.data
+
     if not user.is_superuser:
         return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
-    data = request.data
+  
     if User.objects.filter(username=data["email"]).exists():
         return Response({"detail": "User already exists"}, status=status.HTTP_400_BAD_REQUEST)
-    
+        
     # determine role flags
     is_superuser_flag = True if data.get("role") == "admin" else False
     is_staff_flag = is_superuser_flag
 
     new_user = User.objects.create(
         first_name=data.get("name", ""),
-        username=data["email"],  # Django uses "username", we'll store email here
+        username=data["email"],  
+
         email=data["email"],
         password=make_password(data["password"]),
         is_superuser=is_superuser_flag,
         is_staff=is_staff_flag,
     )
     return Response({"detail": "User created successfully"}, status=status.HTTP_201_CREATED)    
-
-
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updateuser(request,userid):
+    user = request.user
+    data = request.data
+    is_superuser_flag = True if data.get("role") == "admin" else False
+    is_staff_flag = is_superuser_flag
+    
+    if not user.is_superuser:
+        return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+  
+        
+    try:
+        is_superuser_flag = True if data.get("role") == "admin" else False
+        is_staff_flag = is_superuser_flag
+    
+        usertoupdate = User.objects.get(id=userid)
+        usertoupdate.p =data["phone"]
+        usertoupdate.is_superuser = is_superuser_flag
+        usertoupdate.is_staff = is_staff_flag
+        usertoupdate.password=make_password(data["password"]),
+        usertoupdate.email=data["email"],
+        usertoupdate.save()
+        return Response({"success": "user updated successfully"})
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -280,7 +322,72 @@ def getUsers(request):
 
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_store(request):
+    # Only allow admins/staff to create stores for a given user email
+    if not (request.user.is_superuser  and request.user.is_staff):
+        return JsonResponse({"error": "Permission denied"}, status=403)
 
+    # Accept email from frontend (JSON or form-data)
+    email = request.POST.get("email")
+    if not email:
+        return JsonResponse({"error": "Email is required"}, status=400)
+
+    try:
+        target_user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return JsonResponse({"error": "User not found"}, status=404)
+
+    if Store.objects.filter(owner=target_user).exists():
+        return JsonResponse({"message": "only one store a user is allowed"}, status=400)
+
+    name = request.POST.get("name", "")
+    description = request.POST.get("description", "")
+
+    store = Store.objects.create(
+        name=name,
+        description=description,
+        owner=target_user,
+        logo=request.FILES.get("logo"),
+    )
+    return JsonResponse({"message": "Store created successfully"}, status=200)
+@api_view (["GET"])
+@permission_classes([IsAuthenticated])
+def get_store(request):
+    user = request.user
+    try:
+        store = Store.objects.get(owner=user)
+    except Store.DoesNotExist:
+        return JsonResponse({"error": "Store not found"}, status=404)
+    store_data = {
+        "id": store.id,
+        "name": store.name,
+        "logo": request.build_absolute_uri(store.logo.url) if store.logo else None,
+        "description": store.description,
+
+    }
+    return JsonResponse(store_data)
+@api_view (["POST"])
+@permission_classes([IsAuthenticated])
+def update_store(request):
+    user = request.user
+    try:
+        store = Store.objects.get(owner=user)
+    except Store.DoesNotExist:
+        return JsonResponse({"error": "Store not found"}, status=404)
+
+    # Update fields if provided
+    store.name = request.POST.get("name", store.name)
+    store.description = request.POST.get("description", store.description)
+
+    # Handle logo upload
+    if "logo" in request.FILES:
+        store.logo = request.FILES["logo"]
+
+    store.save()
+
+    return JsonResponse({"message": "Store updated successfully"}, status=200)  
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -321,7 +428,7 @@ def add_product(request):
 
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request method"}, status=405)
-
+ 
     name = request.POST.get("name", "").strip()
     category_value = request.POST.get("category")  # frontend sends "category"
 
@@ -356,6 +463,7 @@ def add_product(request):
 
     # Create the product
     product = Product.objects.create(
+        store=Store.objects.get(owner=user),
         name=name,
         description=request.POST.get("description", ""),
         price=request.POST.get("price", 0),
@@ -396,8 +504,20 @@ def add_product(request):
 
     return JsonResponse({"message": "Product added successfully"}, status=200)
 
+@api_view(["GET"])
 def get_products(request):
-    products = Product.objects.all()    
+    user = request.user
+
+    if  user.is_superuser:
+        try:
+            store = Store.objects.get(owner=user)
+            products = Product.objects.filter(store_id=store.id)
+        except Store.DoesNotExist:
+            return JsonResponse({'error': 'Store not found for this user'}, status=404)
+    else:
+        products = Product.objects.all()
+
+
     product_list = []
     for product in products:
         product_data = {
@@ -589,7 +709,18 @@ def getOrders(request):
         return Response(data)
 
     # 🧑‍💼 Superuser — show all orders summary
-    orders = Order.objects.prefetch_related("items").all()
+
+    # Filter orders by the admin's store
+    try:
+        store = Store.objects.get(owner=request.user)
+    except Store.DoesNotExist:
+        return Response({"total_orders": 0, "orders": []})
+
+    product_ids = Product.objects.filter(store=store).values_list("id", flat=True)
+    if not product_ids:
+        return Response({"total_orders": 0, "orders": []})
+
+    orders = Order.objects.prefetch_related("items").filter(items__product_id__in=product_ids).distinct()
     order_list = []
     for order in orders:
         order_data = {

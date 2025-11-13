@@ -43,7 +43,7 @@ function useOrders() {
       return;
     }
 
-    fetch("http://localhost:8080/api/getOrders/", {
+    fetch("/api/getOrders/", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

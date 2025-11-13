@@ -8,21 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import { ToastAction } from "@radix-ui/react-toast";
 import { toast } from "sonner";
-function getCookie(name: string) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (const cookie of cookies) {
-      const cookieTrimmed = cookie.trim();
-      if (cookieTrimmed.startsWith(name + "=")) {
-        cookieValue = decodeURIComponent(cookieTrimmed.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
-const csrftoken = getCookie("csrftoken");
 
 
 interface Category {

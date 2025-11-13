@@ -29,7 +29,7 @@ APPEND_SLASH=True
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-2m%l+wey#g1e&uc_%%^x81lk$t=()o0q-2s%&gd(7^c2rl6kj*'
 #whatsapp 
-ADMIN_WHATSAPP = "+254716735799"
+ADMIN_WHATSAPP = "+254721108063"
 CALLMEBOT_API_KEY = "3645711"
 
 # SECURITY WARNING: don't run with debug turned on in production!

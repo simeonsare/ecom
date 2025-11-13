@@ -6,12 +6,15 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Ship } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
 
 interface Product {
   id: number;
   name: string;
   price: string;
   image: string;
+
 }
 
 interface CartItem {
@@ -26,6 +29,8 @@ export const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [couponCode, setCouponCode] = useState("");
   const [showCheckout, setShowCheckout] = useState(false);
+  const navigate = useNavigate();
+  
   const [userDetails, setUserDetails] = useState({
     name: "",
     phone: "",
@@ -93,8 +98,10 @@ const handleOrderSubmit = async () => {
 
   if (res.ok) {
     alert("✅ Order placed successfully! You will be contacted shortly via WhatsApp.");
+    navigate("/myorders");
+   
     setShowCheckout(false);
-  } else {
+    } else {
     alert("❌ Failed to create order. Please try again.");
   }
 };

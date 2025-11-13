@@ -51,16 +51,16 @@ export const Products: React.FC = () => {
 
   if (priceRange !== 'all') {
     switch (priceRange) {
-      case 'under-50':
+      case 'under-5,000':
         filteredProducts = filteredProducts.filter(product => product.price < 50);
         break;
-      case '50-100':
+      case '5,000-10,000':
         filteredProducts = filteredProducts.filter(product => product.price >= 50 && product.price <= 100);
         break;
-      case '100-200':
+      case '10,000-20,000':
         filteredProducts = filteredProducts.filter(product => product.price >= 100 && product.price <= 200);
         break;
-      case 'over-200':
+      case 'over-20,000':
         filteredProducts = filteredProducts.filter(product => product.price > 200);
         break;
     }
@@ -152,10 +152,10 @@ export const Products: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Prices</SelectItem>
-                  <SelectItem value="under-50">Under $50</SelectItem>
-                  <SelectItem value="50-100">$50 - $100</SelectItem>
-                  <SelectItem value="100-200">$100 - $200</SelectItem>
-                  <SelectItem value="over-200">Over $200</SelectItem>
+                  <SelectItem value="under-5,000">Under ksh 5000</SelectItem>
+                  <SelectItem value="5,000-10,000">ksh 5000 - ksh 10,000</SelectItem>
+                  <SelectItem value="10,000-20,000">ksh 10,000 - ksh 20,000</SelectItem>
+                  <SelectItem value="over-20,000">Over ksh 20,000</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -225,7 +225,7 @@ export const Products: React.FC = () => {
             )}
             {priceRange !== 'all' && (
               <Badge variant="secondary">
-                Price: {priceRange.replace('-', ' - $')}
+                Price: {priceRange.replace('-', ' - ksh ')}
                 <button
                   onClick={() => setPriceRange('all')}
                   className="ml-2 hover:text-destructive"

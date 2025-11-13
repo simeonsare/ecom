@@ -184,7 +184,8 @@ export const Store: React.FC = () => {
                     // Handle WhatsApp order
                     const message = `I need this ${selectedProduct.name} - $${selectedProduct.price}`;
                     const encodedMessage = encodeURIComponent(message);
-                    window.open(`https://wa.me/1234567890?text=${encodedMessage}`, '_blank');
+                    // TODO: Replace with your WhatsApp number
+                    window.open(`https://wa.me/+254716735799?text=${encodedMessage}`, '_blank');
                   }}
                 >
                   Order via WhatsApp

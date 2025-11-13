@@ -34,6 +34,7 @@ import { AddCategory } from "@/pages/admin/AddCategory";
 import { Orders } from "@/pages/admin/Orders";
 import { Orderss } from "@/pages/Orderss";
 import { Users } from "@/pages/admin/Users";
+import{EditUser} from "@/pages/admin/EditUser";
 import { Analytics } from "@/pages/admin/Analytics";
 import { Settings } from "@/pages/admin/Settings";
 import { AddUser } from "@/pages/admin/AddUser";
@@ -41,6 +42,7 @@ import { EditProduct } from "@/pages/admin/EditProduct";
 import { ViewOrder } from "@/pages/admin/ViewOrder";
 import NotFound from "./pages/NotFound";
 import { Navigate } from "react-router-dom";
+import { AddStore } from "./pages/admin/AddStore";
 
 const AdminRoute = ({ children }: { children: JSX.Element }) => {
   const isAdmin = JSON.parse(localStorage.getItem("isAdmin") || "false");
@@ -183,6 +185,16 @@ const App = () => (
               </AdminRoute>
             } />
 
+            <Route path="/admin/store/new" element={
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <AddStore />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
+            } />
+
             <Route path="/admin/products" element={
               <AdminRoute>
                 <Layout>
@@ -258,6 +270,15 @@ const App = () => (
                 <Layout>
                   <AdminLayout>
                     <Users />
+                  </AdminLayout>
+                </Layout>
+              </AdminRoute>
+            } />
+            <Route path="/admin/users/edit/:userid" element={
+              <AdminRoute>
+                <Layout>
+                  <AdminLayout>
+                    <EditUser />
                   </AdminLayout>
                 </Layout>
               </AdminRoute>

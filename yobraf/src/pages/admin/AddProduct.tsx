@@ -173,7 +173,10 @@ export const AddProduct: React.FC = () => {
       toast.success("Product created successfully!", {
         position: "top-center",
       });
-      // navigate("/admin");
+
+      // wait 3 seconds before reloading to show the toast
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      window.location.reload();
     } catch (error) {
       toast.warning(String(error));
       console.error("Error submitting product:", error);

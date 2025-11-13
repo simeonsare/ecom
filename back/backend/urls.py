@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,re_path
+from django.urls import include, path,re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
@@ -28,7 +28,6 @@ from rest_framework_simplejwt.views import (
 )
 import os
 from django.views.static import serve
-
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -55,8 +54,15 @@ urlpatterns = [
     path('api/getOrder/<int:orderId>/', views.getOrder, name="getOrder"),
     path('api/orders/<int:orderId>/update_status/', views.update_order_status, name="update_order_status"),
     path('api/addUser/', views.addUser, name="addUser"),
+    path('api/getUser/<int:userid>/',views.getUser,  name = "getUser"),
+    path('api/updateuser/<int:userid>/', views.updateuser , name ="updateuser"),
     path('api/getUsers/', views.getUsers, name="getUsers"),
     path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
+    path('api/create_store/', views.create_store, name='create_store'),
+    path('api/get_store/', views.get_store, name='get_store'),
+    path('api/update_store/', views.update_store, name='update_store'),
+   
+    
 
 
 

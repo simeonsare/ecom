@@ -23,7 +23,14 @@ import { Product, UserActivity } from '@/types/product';
 export const AdminDashboard: React.FC = () => {
   const [products, setproducts] = useState<Product[]>([]);
   useEffect(() => {
-    fetch("/api/getProducts/")
+    fetch("/api/getProducts/", {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Token ${localStorage.getItem("authToken")}`,
+      },
+    })
       .then(res => res.json())
       .then(data => setproducts(data))
       .catch(() => setproducts([]));
@@ -113,6 +120,13 @@ export const AdminDashboard: React.FC = () => {
           <p className="text-muted-foreground mt-2">Welcome back! Here's what's happening with your store today.</p>
         </div>
         <div className="flex gap-3">
+          <Button 
+            onClick={() => navigate('/admin/store/new')}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Store
+          </Button>
           <Button 
             onClick={() => navigate('/admin/category/new')}
             className="flex items-center gap-2"

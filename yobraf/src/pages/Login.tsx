@@ -43,6 +43,7 @@ export const Login = () => {
       else{
 
         navigate("/admin");
+        window.location.reload();
       }}
        catch (err: unknown) {
         if (err instanceof Error) {

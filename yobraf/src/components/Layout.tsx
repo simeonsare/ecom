@@ -5,6 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Moon, Sun, ShoppingCart, Search, User, Heart, LogIn, LogOut, ShoppingBasket } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { SignUp } from '@/pages/SignUp';
+import { toast } from 'sonner';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,10 +13,29 @@ interface LayoutProps {
 
 const token = localStorage.getItem("authToken") || "";
 
+
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
+  const [storeName, setStoreName] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/get_store/",{
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Token ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setStoreName(data.name || "");
+      })
+      .catch((error) => {
+        toast.error("Failed to fetch store name");
+      });
+  }, [token]);
 
   const [cartCount, setCartCount] = useState<number>(0);
     useEffect(() => {
@@ -36,17 +56,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Top Banner */}
-      <div className="bg-black text-white text-center py-2 text-sm">
-        Summer Sale For All Swim Suits And Free Express Delivery - OFF 50!{" "}
-        <Link to="/deals" className="underline font-medium ml-2">ShopNow</Link>
-      </div>
+      
       
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center">
-          <Link to="/" className="text-2xl font-bold">
-            Exclusive
+             <Link to="/" className="text-2xl font-bold">
+            quickstoreYobra
           </Link>
+
+          {isAdmin && (
+                    <div> <strong>{storeName}</strong> </div>
+          )}
+          
+      
+  
           
           {!isAdmin && (
             <nav className="flex-1 flex justify-center">
@@ -139,7 +162,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="container py-16">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
             <div>
-              <h3 className="text-lg font-bold mb-4">Exclusive</h3>
+              <h3 className="text-lg font-bold mb-4">quickstoreYobra</h3>
               <h4 className="font-medium mb-4">Subscribe</h4>
               <p className="text-sm text-gray-300 mb-4">Get 10% off your first order</p>
               <div className="flex">
@@ -157,7 +180,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <h3 className="font-medium mb-4">Support</h3>
               <div className="space-y-2 text-sm text-gray-300">
                 <p>111 Bijoy sarani, Dhaka,<br />DH 1515, Bangladesh.</p>
-                <p>exclusive@gmail.com</p>
+                <p>quickstoreYobra@gmail.com</p>
                 <p>+88015-88888-9999</p>
               </div>
             </div>

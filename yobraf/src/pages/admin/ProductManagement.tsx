@@ -22,7 +22,14 @@ export const ProductManagement: React.FC = () => {
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   useEffect(() => {
-    fetch("/api/getProducts/")
+    fetch("/api/getProducts/", {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Token ${localStorage.getItem("authToken")}`,
+      },
+    })
       .then(res => res.json())
       .then(data => setProducts(data))
       .catch(() => setProducts([]));

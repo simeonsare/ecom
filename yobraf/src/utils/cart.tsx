@@ -4,7 +4,7 @@ const token = localStorage.getItem('authToken');
 
 
 export function handleAddToCart(productId: number, name: string ) {
-  fetch(`http://localhost:8000/api/add_to_cart/`, {
+  fetch(`/api/add_to_cart/`, {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
